@@ -41,6 +41,7 @@ Notion **업무 성과 관리 템플릿**을 위한 임베드 위젯(오늘 + �
 
 ## 환경변수(필수)
 | 이름 | 설명 |
+|---|---|
 | `NOTION_TOKEN` | Notion Integration Secret |
 | `NOTION_DAILY_DB_ID` | 일일업무 DB ID |
 | `NOTION_TODO_DB_ID` | 투두 DB ID |
@@ -49,6 +50,7 @@ Notion **업무 성과 관리 템플릿**을 위한 임베드 위젯(오늘 + �
 > 아래는 **속성명 커스텀용**입니다. 속성명이 기본값이면 입력 안 해도 됩니다.
 
 | 이름 | 기본값 | 의미 |
+|---|---:|---|
 | `DAILY_DATE_PROP` | `날짜` | 일일업무 DB의 날짜 속성 |
 | `DAILY_TODO_REL_PROP` | `투두리스트` | 일일업무 DB에서 투두로 연결된 관계형 속성 |
 | `TODO_DAILY_REL_PROP` | `업무일지` | 투두 DB에서 일일업무로 연결된 관계형 속성 |
