@@ -1,0 +1,243 @@
+
+<!-- notion-today-summary/index.html -->
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Today Summary</title>
+  <style>
+    :root{
+      --callout: #fff7c9;
+      --calloutFlash: #ffef9a;
+      --text: #222;
+      --muted: #555;
+      --sub: #777;
+    }
+
+    html, body{ height:100%; }
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background:#fff;
+      color: var(--text);
+    }
+
+    .wrap{
+      max-width: 400px;
+      margin: 0 auto;
+
+      background: var(--callout);
+      border-radius: 18px; /* ← 둥글기 줄이려면 여기 숫자만 줄이면 됨 */
+      padding: 12px 12px;
+
+      box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+      cursor: pointer;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+
+      transition: background 120ms ease, transform 80ms ease;
+      position: relative;
+
+      overflow: hidden;
+    }
+
+    .wrap:active{ transform: translateY(0.5px); }
+    .wrap.flash{ background: var(--calloutFlash); }
+
+    .title{
+      font-size:12px;
+      font-weight:600;
+      color: var(--muted);
+      margin: 0 0 10px 0;
+
+      display:flex;
+      justify-content: space-between;
+      gap: 8px;
+      align-items: baseline;
+
+      white-space: nowrap;
+      min-width: 0;
+    }
+    .title .left{
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .title .date{
+      white-space: nowrap;
+      flex: 0 0 auto;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .panel{ background: transparent; }
+
+    .row{
+      display:grid;
+      grid-template-columns: 1fr auto;
+      column-gap: 12px;
+      align-items: center;
+      padding: 8px 2px;
+      min-width: 0;
+    }
+    .row + .row{ margin-top: 2px; }
+
+    .labelLine{
+      display:flex;
+      align-items: baseline;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .label{
+      font-size:15px;
+      font-weight:750;
+      line-height: 1.2;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      min-width: 0;
+    }
+
+    .holdInline{
+      font-size:11px;
+      color: var(--sub);
+      font-weight:400;
+      white-space: nowrap;
+      flex: 0 0 auto;
+    }
+
+    .sub{
+      margin-top:4px;
+      font-size:11px;
+      color: var(--sub);
+      line-height:1.2;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .value{
+      font-size:24px;
+      font-weight:850;
+      line-height:1;
+      white-space: nowrap;
+      text-align:right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    @media (max-width: 280px){
+      .value{ font-size: 22px; }
+      .label{ font-size: 14px; }
+    }
+
+    .wrap.loading{ filter: saturate(1.05); }
+  </style>
+</head>
+<body>
+  <div class="wrap" id="wrap" aria-label="Click to refresh">
+    <div class="title">
+      <span class="left">Today Summary ·</span>
+      <span class="date" id="date"></span>
+    </div>
+
+    <div class="panel" id="panel"></div>
+  </div>
+
+  <script>
+    const wrap = document.getElementById("wrap");
+    const dateEl = document.getElementById("date");
+
+    // yyyy-mm-dd -> 26/01/24
+    function toShortDate(iso){
+      if (!iso || iso.length < 10 || iso[4] !== "-" || iso[7] !== "-") return iso || "-";
+      const yy = iso.slice(2,4);
+      const mm = iso.slice(5,7);
+      const dd = iso.slice(8,10);
+      return `${yy}/${mm}/${dd}`;
+    }
+
+    // ✅ 기준 폭: 350px 미만이면 short, 그 이상이면 long
+    function setDateSmart(iso){
+      const longText = iso || "-";
+      const shortText = toShortDate(iso || "");
+      const w = wrap.getBoundingClientRect().width;
+      dateEl.textContent = (w < 350) ? shortText : longText;
+    }
+
+    function render(j){
+      // ✅ API에서 date를 준다는 전제(없으면 "-")
+      const iso = (j && j.date) ? j.date : "-";
+      setDateSmart(iso);
+
+      const hold = (j?.holdCount ?? 0);
+
+      const items = [
+        { label: "오늘 한 일", value: (j?.doneLogTotal ?? 0), sub: "업무일지(오늘)" },
+        { label: "To-do", value: (j?.plannedText ?? "-"), sub: "투두 완료/전체", holdInline: hold > 0 ? `보류: ${hold}건` : "" },
+        { label: "미완료", value: (j?.pendingToday ?? 0), sub: "투두 중 미기록" },
+      ];
+
+      const panel = document.getElementById("panel");
+      panel.innerHTML = items.map(it => `
+        <div class="row">
+          <div>
+            <div class="labelLine">
+              <div class="label">${it.label}</div>
+              ${it.holdInline ? `<div class="holdInline">${it.holdInline}</div>` : ``}
+            </div>
+            <div class="sub">${it.sub}</div>
+          </div>
+          <div class="value">${it.value}</div>
+        </div>
+      `).join("");
+    }
+
+    async function fetchToday(){
+      const r = await fetch("/api/today?t=" + Date.now(), { cache: "no-store" });
+      return await r.json();
+    }
+
+    let busy = false;
+    async function tick(){
+      try{
+        if (busy) return;
+        if (document.visibilityState !== "visible") return;
+        busy = true;
+
+        wrap.classList.add("loading");
+        const j = await fetchToday();
+        render(j);
+
+        wrap.classList.add("flash");
+        setTimeout(()=>wrap.classList.remove("flash"), 250);
+
+      }catch(e){
+        // 실패 시에도 추가 작업 없음(요청대로 fallback 제거)
+      }finally{
+        wrap.classList.remove("loading");
+        busy = false;
+      }
+    }
+
+    // ✅ 폭이 바뀌면 date 표기만 다시 맞춤 (API 재호출 없음)
+    window.addEventListener("resize", () => {
+      // 현재 표시가 long이면 iso 그대로, short면 long을 복구할 수 없으니 API date가 필요함.
+      // 그래서 마지막 성공값을 저장해둠.
+      if (window.__lastIsoDate) setDateSmart(window.__lastIsoDate);
+    });
+
+    // 마지막 iso 저장(표기만 바꿀 때 사용)
+    const _render = render;
+    render = function(j){
+      if (j && j.date) window.__lastIsoDate = j.date;
+      return _render(j);
+    };
+
+    tick();
+    setInterval(tick, 180000); // 3분
+    wrap.addEventListener("click", tick);
+  </script>
+</body>
+</html>
