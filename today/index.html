@@ -136,11 +136,23 @@
 
     /* ✅ Setup UI (판매용 안내) */
     .setupBodyTitle{
+      display:flex;
+      align-items:center;
+      gap:8px;
+    
       font-size:14px;
       font-weight:900;
       color: var(--danger);
       margin: 2px 0 10px 0;
+      line-height: 1.15;
     }
+    
+    .warnIcon{
+      font-size: 16px;
+      line-height: 1;
+      transform: translateY(-0.5px); /* 살짝 위로: baseline 흔들림 방지 */
+    }
+
     .setupBox{
       background: rgba(255,255,255,0.55);
       border-radius: 14px;
@@ -234,7 +246,7 @@
 
       const panel = document.getElementById("panel");
       panel.innerHTML = `
-        <div class="setupBodyTitle">⚠️ 설정이 필요해요</div>
+        <div class="setupBodyTitle"><span class="warnIcon">⚠️</span><span>설정이 필요해요</span></div>
         <div class="setupBox">
           <div class="setupStep"><b>1)</b> Vercel 프로젝트에서 <b>환경변수</b>를 입력해야 위젯이 작동합니다.</div>
           <div class="setupStep"><b>2)</b> 필수 3개:</div>
