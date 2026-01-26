@@ -6,229 +6,244 @@
   <title>This Month</title>
   <style>
     :root{
-      --blue: #5b8def;
-      --orange: #ff8a3d;
-      --track: rgba(0,0,0,.07);
-      --text: #111;
-      --muted: rgba(0,0,0,.55);
-      --card-border: rgba(0,0,0,.08);
-      --shadow: 0 6px 18px rgba(0,0,0,.04);
-      --radius: 16px;
-      --bar-h: 14px;
-      --gap-y: 8px;
-      --label-w: 118px;   /* ⬅ 라벨칸 가로폭(작게) */
+      --callout:#fff7c9;
+      --text:#222;
+      --muted:#555;
+      --sub:#777;
+      --danger:#b42318;
+      --btn:#111;
+      --card:#ffffff;
+      --border: rgba(0,0,0,0.08);
+      --bar: rgba(17,17,17,0.18);
+      --bar2: rgba(17,17,17,0.10);
     }
-
+    html,body{height:100%;}
     body{
       margin:0;
-      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans KR", Arial, sans-serif;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      color: var(--text);
       background:#fff;
-      color:var(--text);
     }
-
-    /* ✅ 이번달 페이지만 가로폭 줄이는 핵심 */
-    .wrap{
-      max-width: 900px;     /* ⬅ 여기 820~860으로 더 줄여도 됨 */
-      margin: 0 auto;
-      padding: 10px 10px 12px;
+    .page{max-width: 1100px; margin: 0 auto; padding: 16px;}
+    .top{
+      display:flex; justify-content: space-between; align-items: baseline; gap: 8px;
+      margin-bottom: 12px; white-space: nowrap;
     }
+    .top .title{font-size:14px; font-weight:850;}
+    .top .date{font-size:12px; color: var(--sub); font-variant-numeric: tabular-nums;}
 
-    /* 2개 패널: 넓으면 2열, 좁으면 1열 */
-    .grid{
+    .grid2{
       display:grid;
       grid-template-columns: 1fr 1fr;
-      gap: 10px; /* ⬅ 간격 줄임 */
-      align-items: stretch;
+      gap: 12px;
     }
-    @media (max-width: 860px){
-      .grid{ grid-template-columns: 1fr; }
-    }
+    @media (max-width: 900px){ .grid2{grid-template-columns: 1fr;} }
 
-    .panel{
-      border:1px solid var(--card-border);
-      border-radius: var(--radius);
-      background:#fff;
-      box-shadow: var(--shadow);
-      padding: 10px 12px;  /* ⬅ 패딩 줄임 */
-      overflow:hidden;
+    .card{
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 12px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.04);
     }
-
-    .panel-title{
-      font-size: 14px;      /* ⬅ 약간 작게 */
-      font-weight: 900;
-      letter-spacing: -0.2px;
-      margin: 0 0 8px;
-    }
-
-    .rows{
-      display:flex;
-      flex-direction:column;
-      gap: var(--gap-y);
-    }
-
-    .row{
-      display:grid;
-      grid-template-columns: var(--label-w) 1fr;
-      align-items:center;
-      column-gap: 10px;
-    }
-
-    .label{
+    .card .label{
       font-size: 13px;
-      font-weight: 800;
-      letter-spacing: -0.2px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      font-weight: 850;
+      margin-bottom: 10px;
     }
 
-    .track{
-      position: relative;
-      height: var(--bar-h);
-      background: var(--track);
-      border-radius: 999px;
-      overflow:hidden;
+    .item{
+      display:grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: center;
+      margin: 10px 0;
     }
-
-    .fill{
-      position:absolute;
-      left:0; top:0; bottom:0;
-      width:0%;
-      border-radius: 999px;
-      display:flex;
-      align-items:center;
-      padding-left: 8px;
-      box-sizing: border-box;
-      min-width: 0;
-    }
-
-    /* ✅ 값 레이블: 흰색 + 막대 시작점 */
-    .val-in{
-      font-size: 12px;
-      font-weight: 900;
-      color: #fff;
-      line-height: 1;
-      text-shadow: 0 1px 1px rgba(0,0,0,.18);
-      white-space: nowrap;
-    }
-
-    /* 값이 0이면 막대 안에 못 넣으니까 트랙 왼쪽에 회색으로 표시 */
-    .val-zero{
-      position:absolute;
-      left:8px; top:50%;
-      transform: translateY(-50%);
-      font-size: 12px;
-      font-weight: 900;
-      color: rgba(0,0,0,.45);
-      line-height: 1;
-      white-space: nowrap;
-    }
-
-    /* 로딩/에러 */
-    .hint{
-      margin-top: 6px;
+    .name{
       font-size: 12px;
       color: var(--muted);
+      white-space: nowrap;
+      overflow:hidden;
+      text-overflow: ellipsis;
+    }
+    .num{
+      font-size: 12px;
+      color: var(--sub);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+    .barWrap{
+      grid-column: 1 / -1;
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(0,0,0,0.06);
+      overflow:hidden;
+    }
+    .barA{height:100%; background: var(--bar);}
+    .barB{height:100%; background: var(--bar2); margin-top:6px; border-radius:999px;}
+
+    /* ✅ Setup UI (today와 통일) */
+    .setupWrap{
+      max-width: 520px;
+      margin: 16px auto;
+      background: var(--callout);
+      border-radius: 18px;
+      padding: 14px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    }
+    .setupTitle{
+      font-size:12px; font-weight:600; color: var(--muted);
+      margin-bottom: 10px;
+    }
+    .setupBodyTitle{
+      font-size:14px; font-weight:800; color: var(--danger);
+      margin: 2px 0 10px 0;
+    }
+    .setupBox{
+      background: rgba(255,255,255,0.55);
+      border-radius: 14px;
+      padding: 10px;
+      font-size: 12px;
+      color: #222;
+      line-height: 1.35;
+    }
+    .setupStep{ margin: 8px 0; }
+    .envList{ margin:8px 0 0 0; padding-left:16px; }
+    .pill{
+      display:inline-block;
+      border: 1px solid rgba(0,0,0,0.15);
+      border-radius: 999px;
+      padding: 2px 8px;
+      margin-right: 6px;
+      font-size: 11px;
+      background: rgba(255,255,255,0.7);
+    }
+    .btnRow{ display:flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+    .btn{
+      appearance:none; border:none;
+      border-radius: 12px; padding: 8px 10px;
+      font-size: 12px; font-weight: 700;
+      background: var(--btn); color:#fff; cursor:pointer;
+    }
+    .btn.secondary{
+      background: rgba(0,0,0,0.25);
+      color: #111;
+      border: 1px solid rgba(0,0,0,0.2);
     }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="grid">
-      <section class="panel">
-        <h2 class="panel-title">업무유형</h2>
-        <div class="rows" id="workRows"></div>
-        <div class="hint" id="workHint"></div>
-      </section>
-
-      <section class="panel">
-        <h2 class="panel-title">성과유형</h2>
-        <div class="rows" id="outRows"></div>
-        <div class="hint" id="outHint"></div>
-      </section>
-    </div>
-  </div>
+  <div class="page" id="app"></div>
 
   <script>
-    (async function(){
-      const $ = (id) => document.getElementById(id);
+    const app = document.getElementById("app");
 
-      function clear(el){ while(el.firstChild) el.removeChild(el.firstChild); }
+    function copy(text){ try{ navigator.clipboard.writeText(text); }catch(e){} }
 
-      function makeRow(label, value, max, color){
-        const row = document.createElement("div");
-        row.className = "row";
+    function renderSetup(need){
+      const req = Array.isArray(need) && need.length
+        ? need
+        : ["NOTION_TOKEN","NOTION_DAILY_DB_ID","NOTION_TODO_DB_ID"];
 
-        const l = document.createElement("div");
-        l.className = "label";
-        l.textContent = label;
+      const routes = ["/today","/kpi","/this-month","/month-compare"]
+        .map(p => `${location.origin}${p}`).join("\n");
 
-        const track = document.createElement("div");
-        track.className = "track";
+      app.innerHTML = `
+        <div class="setupWrap">
+          <div class="setupTitle">This Month</div>
+          <div class="setupBodyTitle">설정이 필요해요</div>
+          <div class="setupBox">
+            <div class="setupStep"><b>1)</b> Vercel 프로젝트에서 <b>환경변수</b>를 입력해야 위젯이 작동합니다.</div>
+            <div class="setupStep"><b>2)</b> 필수 3개:</div>
+            <ul class="envList">
+              ${req.map(k=>`<li><span class="pill">${k}</span></li>`).join("")}
+            </ul>
+            <div class="setupStep" style="margin-top:10px;"><b>3)</b> 배포 후 노션에는 아래 경로를 임베드하세요.</div>
+            <div class="btnRow">
+              <button class="btn" id="copyRoutes">임베드 주소 복사</button>
+              <button class="btn secondary" id="retry">다시 불러오기</button>
+            </div>
+          </div>
+        </div>
+      `;
+      document.getElementById("copyRoutes").onclick = () => copy(routes);
+      document.getElementById("retry").onclick = () => location.reload();
+    }
 
-        if(value > 0){
-          const pct = max > 0 ? (value / max) * 100 : 0;
-          const fill = document.createElement("div");
-          fill.className = "fill";
-          fill.style.width = Math.max(0, Math.min(100, pct)) + "%";
-          fill.style.background = color;
+    function safeArr(a){ return Array.isArray(a) ? a : []; }
+    function safeNumber(x){ const n = Number(x); return Number.isFinite(n) ? n : 0; }
 
-          const v = document.createElement("span");
-          v.className = "val-in";
-          v.textContent = String(value);
+    function renderBarsCard(title, labels, thisArr, lastArr){
+      const all = thisArr.concat(lastArr).map(safeNumber);
+      const maxV = Math.max(1, ...all);
 
-          fill.appendChild(v);
-          track.appendChild(fill);
-        }else{
-          const vz = document.createElement("span");
-          vz.className = "val-zero";
-          vz.textContent = "0";
-          track.appendChild(vz);
-        }
+      return `
+        <div class="card">
+          <div class="label">${title}</div>
+          ${labels.map((name, i) => {
+            const vThis = safeNumber(thisArr[i]);
+            const vLast = safeNumber(lastArr[i]);
+            const wThis = Math.round((vThis / maxV) * 100);
+            const wLast = Math.round((vLast / maxV) * 100);
 
-        row.appendChild(l);
-        row.appendChild(track);
-        return row;
+            return `
+              <div class="item">
+                <div class="name">${name}</div>
+                <div class="num">이번달 ${vThis} / 전월 ${vLast}</div>
+                <div class="barWrap" aria-label="${name}">
+                  <div class="barA" style="width:${wThis}%;"></div>
+                </div>
+                <div class="barWrap" style="height:6px; margin-top:-6px;">
+                  <div class="barB" style="width:${wLast}%;"></div>
+                </div>
+              </div>
+            `;
+          }).join("")}
+        </div>
+      `;
+    }
+
+    function renderPage(j){
+      const month = j?.meta?.month || j?.kpi?.month || "";
+      app.innerHTML = `
+        <div class="top">
+          <div class="title">이번달 요약</div>
+          <div class="date">${month || ""}</div>
+        </div>
+
+        <div class="grid2">
+          ${renderBarsCard(
+            "업무유형",
+            safeArr(j?.work?.labels),
+            safeArr(j?.work?.this),
+            safeArr(j?.work?.last)
+          )}
+          ${renderBarsCard(
+            "성과유형",
+            safeArr(j?.outcome?.labels),
+            safeArr(j?.outcome?.this),
+            safeArr(j?.outcome?.last)
+          )}
+        </div>
+
+        <div style="margin-top:10px; font-size:11px; color:var(--sub);">
+          막대(진한색)=이번달, 얇은 막대(연한색)=전월
+        </div>
+      `;
+    }
+
+    async function main(){
+      const r = await fetch("/api/monthly?t=" + Date.now(), { cache:"no-store" });
+      const j = await r.json().catch(()=> ({}));
+
+      if (!r.ok || j?.error === "Missing env"){
+        renderSetup(j?.need);
+        return;
       }
+      renderPage(j);
+    }
 
-      function render(containerId, hintId, labels, values, color){
-        const box = $(containerId);
-        const hint = $(hintId);
-        clear(box);
-
-        if(!Array.isArray(labels) || !Array.isArray(values) || labels.length === 0){
-          hint.textContent = "데이터 없음";
-          return;
-        }
-
-        const max = Math.max(1, ...values.map(v => Number(v) || 0));
-        labels.forEach((lab, i) => {
-          const v = Number(values[i] || 0);
-          box.appendChild(makeRow(lab, v, max, color));
-        });
-
-        hint.textContent = "";
-      }
-
-      try{
-        const res = await fetch("/api/monthly", { cache: "no-store" });
-        const data = await res.json();
-
-        if(data?.error){
-          $("workHint").textContent = data.error;
-          $("outHint").textContent = data.error;
-          return;
-        }
-
-        // ✅ 이번달(this)만 사용
-        render("workRows", "workHint", data?.work?.labels || [], data?.work?.this || [], getComputedStyle(document.documentElement).getPropertyValue("--blue").trim() || "#5b8def");
-        render("outRows",  "outHint",  data?.outcome?.labels || [], data?.outcome?.this || [], getComputedStyle(document.documentElement).getPropertyValue("--orange").trim() || "#ff8a3d");
-
-      }catch(e){
-        $("workHint").textContent = String(e?.message || e);
-        $("outHint").textContent  = String(e?.message || e);
-      }
-    })();
+    main();
   </script>
 </body>
 </html>
