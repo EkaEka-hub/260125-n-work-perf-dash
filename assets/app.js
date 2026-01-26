@@ -1,10 +1,28 @@
-// /assets/app.js (KPI + month-compare) + Missing env 안내 UI 유지
+// /assets/app.js (통합: KPI + this-month + month-compare)
 (async function(){
   const $ = (id) => document.getElementById(id);
 
   function setText(id, text){
     const el = $(id);
     if(el) el.textContent = text;
+  }
+
+  function hideAppSections(){
+    document.querySelectorAll("[data-app-section]").forEach(el => { el.style.display = "none"; });
+  }
+
+  function showSetup(title, need){
+    hideAppSections();
+    if(typeof window.renderSetupCard === "function"){
+      window.renderSetupCard({
+        mountId: "setupRoot",
+        title,
+        requiredEnv: need || ["NOTION_TOKEN","NOTION_DAILY_DB_ID","NOTION_TODO_DB_ID"],
+      });
+    }else{
+      const r = $("setupRoot");
+      if(r) r.innerHTML = `<div style="padding:14px;font-weight:900;color:rgba(180,35,24,1)">⚠️ 설정이 필요해요</div>`;
+    }
   }
 
   function fmtDelta(n){
@@ -21,99 +39,25 @@
 
   const API_URL = `/api/monthly${location.search || ""}`;
 
-  function setupHtml(pageTitle){
-    const origin = location.origin;
-    const urls = [
-      `${origin}/today`,
-      `${origin}/kpi`,
-      `${origin}/this-month`,
-      `${origin}/month-compare`,
-    ].join("\n");
-
-    return `
-      <div style="max-width:640px;margin:16px auto;padding:0 12px;font-family:system-ui,-apple-system,'Segoe UI',Roboto,'Noto Sans KR',Arial,sans-serif;">
-        <div style="background:#fff7c9;border-radius:18px;padding:14px 14px;box-shadow:0 1px 2px rgba(0,0,0,.04);">
-          <div style="font-size:12px;font-weight:700;color:rgba(0,0,0,.55);margin:0 0 10px;">${pageTitle} ·</div>
-          <div style="display:flex;align-items:center;gap:8px;margin:0 0 12px;">
-            <div style="font-size:18px;line-height:1;">⚠️</div>
-            <div style="font-size:16px;font-weight:900;color:#d11;">설정이 필요해요</div>
-          </div>
-
-          <div style="background:rgba(255,255,255,.55);border-radius:14px;padding:12px 12px;">
-            <div style="font-size:13px;font-weight:800;margin:0 0 8px;">1) Vercel 프로젝트에서 환경변수를 입력해야 위젯이 작동합니다.</div>
-            <div style="font-size:13px;font-weight:900;margin:0 0 6px;">2) 필수 3개:</div>
-            <ul style="margin:0 0 10px 18px;padding:0;font-size:13px;font-weight:800;">
-              <li><code style="background:#fff;border:1px solid rgba(0,0,0,.12);padding:2px 6px;border-radius:999px;">NOTION_TOKEN</code></li>
-              <li><code style="background:#fff;border:1px solid rgba(0,0,0,.12);padding:2px 6px;border-radius:999px;">NOTION_DAILY_DB_ID</code></li>
-              <li><code style="background:#fff;border:1px solid rgba(0,0,0,.12);padding:2px 6px;border-radius:999px;">NOTION_TODO_DB_ID</code></li>
-            </ul>
-            <div style="font-size:13px;font-weight:800;margin:0 0 10px;">3) 배포 후 노션에는 아래 4개 주소를 임베드하세요.</div>
-
-            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-              <button id="btnCopyEmbeds" style="border:0;border-radius:12px;padding:10px 12px;font-size:13px;font-weight:900;background:#111;color:#fff;cursor:pointer;">4개 임베드 주소 복사</button>
-              <button id="btnReload" style="border:0;border-radius:12px;padding:10px 12px;font-size:13px;font-weight:900;background:rgba(0,0,0,.2);color:#111;cursor:pointer;">다시 불러오기</button>
-            </div>
-            <pre id="embedList" style="margin:10px 0 0;font-size:12px;line-height:1.4;white-space:pre-wrap;word-break:break-all;background:transparent;border:0;color:rgba(0,0,0,.7);">${urls}</pre>
-          </div>
-        </div>
-      </div>
-    `;
-  }
-
-  function mountSetup(pageTitle){
-    document.body.innerHTML = setupHtml(pageTitle);
-    const btnCopy = document.getElementById("btnCopyEmbeds");
-    const btnReload = document.getElementById("btnReload");
-    const text = document.getElementById("embedList")?.textContent || "";
-
-    if(btnCopy){
-      btnCopy.addEventListener("click", async () => {
-        try{
-          await navigator.clipboard.writeText(text.trim());
-          btnCopy.textContent = "복사됨!";
-          setTimeout(()=>btnCopy.textContent="4개 임베드 주소 복사", 900);
-        }catch(e){
-          // 클립보드 실패 시 그냥 선택이라도 쉽게
-          alert("복사가 안되면 아래 주소를 드래그해서 복사해줘.");
-        }
-      });
-    }
-    if(btnReload){
-      btnReload.addEventListener("click", () => location.reload());
-    }
-  }
-
   async function getData(){
     const res = await fetch(API_URL, { cache:"no-store" });
-    const data = await res.json();
+    const data = await res.json().catch(()=> ({}));
 
-    // monthly API가 500일 때도 json을 주니까 여기서 Missing env 잡기
-    if(data?.error){
-      const need = data?.hint?.requiredEnv || ["NOTION_TOKEN","NOTION_DAILY_DB_ID","NOTION_TODO_DB_ID"];
-      const isMissing = String(data.error).includes("Missing NOTION_") || String(data.error).includes("Missing env");
-      if(isMissing){
-        const err = new Error("Missing env");
-        err.code = "MISSING_ENV";
-        err.need = need;
-        throw err;
-      }
-      throw new Error(data.error);
+    if(!res.ok || data?.error){
+      const err = new Error(String(data?.error || `HTTP ${res.status}`));
+      err.need = data?.hint?.requiredEnv || ["NOTION_TOKEN","NOTION_DAILY_DB_ID","NOTION_TODO_DB_ID"];
+      err.raw = data;
+      throw err;
     }
-
     return data;
   }
 
-  // ✅ 최다 라벨(건수 포함) — "일반행정(26)" 형태
   function topLabel(labels, values){
     if(!Array.isArray(labels) || !Array.isArray(values) || labels.length === 0) return "-";
-    let maxV = -Infinity;
-    let maxIdx = -1;
+    let maxV = -Infinity, maxIdx = -1;
     for(let i=0;i<values.length;i++){
       const v = Number(values[i] ?? 0);
-      if(v > maxV){
-        maxV = v;
-        maxIdx = i;
-      }
+      if(v > maxV){ maxV = v; maxIdx = i; }
     }
     if(maxIdx < 0) return "-";
     const name = labels[maxIdx] ?? "-";
@@ -122,7 +66,7 @@
   }
 
   // =========================
-  // KPI 카드 렌더 (원래 기대하던 레이아웃)
+  // KPI 카드 렌더
   // =========================
   function renderKpi(kpi, data){
     if(!$("kpiMonth")) return;
@@ -148,8 +92,8 @@
     setText("kpiPlannedPending", kpi.plannedPending ?? 0);
     setText("kpiUnplanned", kpi.unplanned ?? 0);
 
-    // ✅ % 두 번 곱하는 실수 방지: API의 planRate(정수 %) 그대로 표시
-    setText("kpiPlanRate", kpi.planRate ?? 0);
+    // ✅ api/monthly의 planRate는 이미 % 정수(예: 91)
+    setText("kpiPlanRate", (kpi.planRate ?? 0));
 
     const done = Number(kpi.plannedDone ?? 0);
     const total = Number(kpi.plannedTotal ?? 0);
@@ -160,7 +104,92 @@
   }
 
   // =========================
-  // 전월대비 세로막대 (month-compare) — 원래 기대하던 그래프
+  // this-month 가로 막대 (너가 원하던 스타일)
+  // =========================
+  function renderThisMonthBars(containerId, labels, values, fillColor){
+    const root = $(containerId);
+    if(!root) return;
+
+    root.innerHTML = "";
+    const vals = (values || []).map(v => Number(v) || 0);
+    const max = Math.max(1, ...vals);
+
+    const wrap = document.createElement("div");
+    wrap.style.display = "flex";
+    wrap.style.flexDirection = "column";
+    wrap.style.gap = "10px";
+
+    labels.forEach((name, i) => {
+      const v = vals[i] || 0;
+      const pct = Math.max(0, Math.min(100, (v / max) * 100));
+
+      const row = document.createElement("div");
+      row.style.display = "grid";
+      row.style.gridTemplateColumns = "140px 1fr";
+      row.style.gap = "10px";
+      row.style.alignItems = "center";
+
+      const label = document.createElement("div");
+      label.style.fontSize = "12px";
+      label.style.fontWeight = "900";
+      label.style.color = "rgba(0,0,0,.85)";
+      label.style.whiteSpace = "nowrap";
+      label.style.overflow = "hidden";
+      label.style.textOverflow = "ellipsis";
+      label.title = name;
+      label.textContent = name;
+
+      const track = document.createElement("div");
+      track.style.height = "16px";
+      track.style.borderRadius = "999px";
+      track.style.background = "rgba(0,0,0,0.08)";
+      track.style.position = "relative";
+      track.style.overflow = "hidden";
+
+      const fill = document.createElement("div");
+      fill.style.height = "100%";
+      fill.style.width = pct.toFixed(2) + "%";
+      fill.style.background = (v === 0 ? "rgba(0,0,0,0.14)" : fillColor);
+      fill.style.borderRadius = "999px";
+      fill.style.position = "relative";
+      fill.style.minWidth = v === 0 ? "0px" : "18px";
+
+      // ✅ 숫자 “pill” (원래 너가 원하던 느낌)
+      const pill = document.createElement("div");
+      pill.textContent = String(v);
+      pill.style.position = "absolute";
+      pill.style.left = "8px";
+      pill.style.top = "50%";
+      pill.style.transform = "translateY(-50%)";
+      pill.style.fontSize = "11px";
+      pill.style.fontWeight = "900";
+      pill.style.lineHeight = "1";
+      pill.style.padding = "3px 7px";
+      pill.style.borderRadius = "999px";
+      pill.style.background = "rgba(255,255,255,0.85)";
+      pill.style.color = "rgba(0,0,0,.75)";
+      pill.style.pointerEvents = "none";
+
+      // 0이면 fill이 없으니 track에 붙여서 보이게
+      if(v === 0){
+        pill.style.background = "rgba(0,0,0,0.08)";
+        pill.style.color = "rgba(0,0,0,.55)";
+        track.appendChild(pill);
+      }else{
+        fill.appendChild(pill);
+        track.appendChild(fill);
+      }
+
+      row.appendChild(label);
+      row.appendChild(track);
+      wrap.appendChild(row);
+    });
+
+    root.appendChild(wrap);
+  }
+
+  // =========================
+  // month-compare 세로 막대 (원래 기대 그래프)
   // =========================
   function renderMonthCompareVertical(containerId, labels, lastArr, thisArr, thisColor) {
     const el = $(containerId);
@@ -169,8 +198,8 @@
     el.innerHTML = "";
     el.style.overflow = "visible";
 
-    const lastVals = (lastArr || []).map(Number);
-    const thisVals = (thisArr || []).map(Number);
+    const lastVals = (lastArr || []).map(v => Number(v) || 0);
+    const thisVals = (thisArr || []).map(v => Number(v) || 0);
     const max = Math.max(1, ...lastVals, ...thisVals);
 
     const BAR_W = 30;
@@ -331,6 +360,14 @@
     // KPI
     if(data?.kpi) renderKpi(data.kpi, data);
 
+    // this-month
+    if($("chartWorkThis") && data?.work){
+      renderThisMonthBars("chartWorkThis", data.work.labels || [], data.work.this || [], COLOR_WORK);
+    }
+    if($("chartOutcomeThis") && data?.outcome){
+      renderThisMonthBars("chartOutcomeThis", data.outcome.labels || [], data.outcome.this || [], COLOR_OUTCOME);
+    }
+
     // month-compare
     if($("chartWorkDelta") && data?.work){
       renderMonthCompareVertical("chartWorkDelta", data.work.labels || [], data.work.last || [], data.work.this || [], COLOR_WORK);
@@ -340,18 +377,18 @@
     }
 
   } catch(e){
-    if(e?.code === "MISSING_ENV"){
-      // 페이지별 타이틀
-      const t =
-        $("kpiMonth") ? "Monthly KPI" :
-        ($("chartWorkDelta") || $("chartOutcomeDelta")) ? "Month Compare" :
-        "Setup";
-      mountSetup(t);
+    const msg = String(e?.message || e);
+
+    // ✅ “Missing …” 류면 setup 카드 유지
+    if(msg.includes("Missing")){
+      showSetup(
+        $("kpiMonth") ? "Monthly KPI" : ($("chartWorkThis") ? "This Month" : "Month Compare"),
+        e?.need
+      );
       return;
     }
 
-    const msg = String(e?.message || e);
-
+    // 그 외 에러는 화면에 표시
     if($("kpiMonth")){
       setText("kpiMonth", "오류");
       setText("kpiTopWork", "최다 업무: -");
@@ -360,7 +397,7 @@
       setText("kpiDoneRule", msg);
     }
 
-    ["chartWorkDelta","chartOutcomeDelta"].forEach(id=>{
+    ["chartWorkThis","chartOutcomeThis","chartWorkDelta","chartOutcomeDelta"].forEach(id=>{
       const el = $(id);
       if(el) el.innerHTML = `<div style="font-size:12px;font-weight:900;color:rgba(239,68,68,.9)">${msg}</div>`;
     });
