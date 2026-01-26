@@ -32,15 +32,6 @@
     return { t: "", c: "rgba(0,0,0,.45)" };
   }
 
-  // ✅ rgba(...,a) -> rgba(...,1) 로 바꿔서 pill이 막대보다 “진하게” 보이게
-  function solidRGBA(color){
-    const s = String(color || "");
-    const m = s.match(/^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)(?:\s*,\s*([0-9.]+))?\s*\)$/i);
-    if(!m) return s;
-    const r = m[1], g = m[2], b = m[3];
-    return `rgba(${r},${g},${b},1)`;
-  }
-
   const COLOR_WORK = "rgba(59,130,246,0.78)";
   const COLOR_OUTCOME = "rgba(249,115,22,0.78)";
   const COLOR_ZERO = "rgba(0,0,0,0.18)";
@@ -113,25 +104,32 @@
   }
 
   // =========================
-  // this-month 가로 막대 (✅ 값 pill을 “막대색 + 흰글씨”로)
+  // this-month 가로 막대
+  // ✅ 수정: 값 레이블을 “배경 없는 글씨만” + “괄호 제거”
   // =========================
   function renderThisMonthBars(containerId, labels, values, fillColor){
     const root = $(containerId);
     if(!root) return;
 
     root.innerHTML = "";
-    const vals = (values || []).map(v => Number(v) || 0);
-    const max = Math.max(1, ...vals);
+
+    // 값이 "(27)" 같은 문자열로 들어와도 숫자만 추출
+    const nums = (values || []).map(v => {
+      const s = String(v ?? "");
+      const cleaned = s.replace(/[^\d.-]/g, ""); // 괄호/문자 제거
+      const n = Number(cleaned);
+      return Number.isFinite(n) ? n : 0;
+    });
+
+    const max = Math.max(1, ...nums);
 
     const wrap = document.createElement("div");
     wrap.style.display = "flex";
     wrap.style.flexDirection = "column";
     wrap.style.gap = "10px";
 
-    const pillBg = solidRGBA(fillColor); // ✅ 더 진한(불투명) 컬러로 pill 강조
-
     labels.forEach((name, i) => {
-      const v = vals[i] || 0;
+      const v = nums[i] || 0;
       const pct = Math.max(0, Math.min(100, (v / max) * 100));
 
       const row = document.createElement("div");
@@ -157,40 +155,42 @@
       track.style.position = "relative";
       track.style.overflow = "hidden";
 
+      // fill (막대)
       const fill = document.createElement("div");
       fill.style.height = "100%";
       fill.style.width = pct.toFixed(2) + "%";
       fill.style.background = (v === 0 ? "rgba(0,0,0,0.14)" : fillColor);
       fill.style.borderRadius = "999px";
-      fill.style.position = "relative";
-      fill.style.minWidth = v === 0 ? "0px" : "18px";
+      fill.style.position = "absolute";
+      fill.style.left = "0";
+      fill.style.top = "0";
+      fill.style.bottom = "0";
+      // ✅ 숫자 영역 때문에 “덩어리” 생기지 않게: 최소폭 강제 X
+      // fill.style.minWidth = ...
 
-      // ✅ 정답 이미지처럼: “색 pill + 흰 글씨”
-      const pill = document.createElement("div");
-      pill.textContent = String(v);
-      pill.style.position = "absolute";
-      pill.style.left = "8px";
-      pill.style.top = "50%";
-      pill.style.transform = "translateY(-50%)";
-      pill.style.fontSize = "11px";
-      pill.style.fontWeight = "900";
-      pill.style.lineHeight = "1";
-      pill.style.padding = "3px 7px";
-      pill.style.borderRadius = "999px";
-      pill.style.pointerEvents = "none";
+      track.appendChild(fill);
 
-      if(v === 0){
-        // 0은 회색 pill
-        pill.style.background = "rgba(0,0,0,0.12)";
-        pill.style.color = "rgba(0,0,0,.55)";
-        track.appendChild(pill);
-      }else{
-        // ✅ 막대색 pill (불투명) + 흰 글씨
-        pill.style.background = pillBg;
-        pill.style.color = "rgba(255,255,255,0.95)";
-        fill.appendChild(pill);
-        track.appendChild(fill);
-      }
+      // ✅ 값 레이블: 배경/패딩/라운드 없이 “글씨만”
+      const valText = document.createElement("div");
+      valText.textContent = String(v); // 괄호 없이 숫자만
+      valText.style.position = "absolute";
+      valText.style.left = "10px";
+      valText.style.top = "50%";
+      valText.style.transform = "translateY(-50%)";
+      valText.style.fontSize = "11px";
+      valText.style.fontWeight = "900";
+      valText.style.lineHeight = "1";
+      valText.style.background = "transparent";     // ✅ 배경 없음
+      valText.style.padding = "0";                  // ✅ 패딩 없음
+      valText.style.borderRadius = "0";             // ✅ 라운드 없음
+      valText.style.pointerEvents = "none";
+
+      // ✅ 정답 느낌: 막대 위의 텍스트처럼 (색은 너무 튀지 않게)
+      // - 막대가 0이면 회색 트랙 위라 조금 더 진한 회색
+      // - 막대가 있으면 파랑/주황 위라 흰색이 가독성 좋음
+      valText.style.color = (v === 0 ? "rgba(0,0,0,.55)" : "rgba(255,255,255,0.95)");
+
+      track.appendChild(valText);
 
       row.appendChild(label);
       row.appendChild(track);
