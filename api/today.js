@@ -1,5 +1,5 @@
 
-// notion-today-summary/api/today.js
+//api/today.js
 
 export default async function handler(req, res) {
   try {
