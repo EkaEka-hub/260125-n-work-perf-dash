@@ -1,93 +1,12 @@
-:root{
-  --callout:#fff7c9;
-  --text:#222;
-  --muted:#555;
-  --sub:#777;
-  --danger:#b42318;
-  --btn:#111;
-}
-
-.setupWrap{
-  max-width: 920px;
-  margin: 0 auto;
-  padding: 16px;
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-  color: var(--text);
-}
-
-.setupCard{
-  background: var(--callout);
-  border-radius: 18px;
-  padding: 14px;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
-}
-
-.setupTitleRow{
-  display:flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 8px;
-  margin-bottom: 10px;
-  white-space: nowrap;
-}
-
-.setupTitle{
-  font-size:12px;
-  font-weight:600;
-  color: var(--muted);
-  overflow:hidden;
-  text-overflow: ellipsis;
-}
-
-.setupBodyTitle{
-  font-size:14px;
-  font-weight:800;
-  color: var(--danger);
-  margin: 2px 0 10px 0;
-}
-
-.setupBox{
-  background: rgba(255,255,255,0.55);
-  border-radius: 14px;
-  padding: 10px;
-  font-size: 12px;
-  color: #222;
-  line-height: 1.35;
-}
-
-.setupStep{ margin: 8px 0; }
-.envList{ margin:8px 0 0 0; padding-left:16px; }
-
-.pill{
-  display:inline-block;
-  border: 1px solid rgba(0,0,0,0.15);
-  border-radius: 999px;
-  padding: 2px 8px;
-  margin-right: 6px;
-  font-size: 11px;
-  background: rgba(255,255,255,0.7);
-}
-
-.btnRow{
-  display:flex;
-  gap: 8px;
-  margin-top: 10px;
-  flex-wrap: wrap;
-}
-
-.btn{
-  appearance:none;
-  border: none;
-  border-radius: 12px;
-  padding: 8px 10px;
-  font-size: 12px;
-  font-weight: 700;
-  background: var(--btn);
-  color: #fff;
-  cursor: pointer;
-}
-.btn.secondary{
-  background: rgba(0,0,0,0.25);
-  color: #111;
-  border: 1px solid rgba(0,0,0,0.2);
-}
+:root{--callout:#fff7c9;--text:#222;--muted:#555;--sub:#777;--danger:#b42318;--btn:#111;--card:#fff;--border:rgba(0,0,0,.08);}
+.setupWrap{max-width:520px;margin:16px auto;background:var(--callout);border-radius:18px;padding:14px;box-shadow:0 1px 2px rgba(0,0,0,.04);}
+.setupTitle{font-size:12px;font-weight:600;color:var(--muted);margin-bottom:10px;}
+.setupBodyTitle{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:900;color:var(--danger);margin:2px 0 10px;line-height:1.15;}
+.warnIcon{font-size:16px;line-height:1;transform:translateY(-.5px);}
+.setupBox{background:rgba(255,255,255,.55);border-radius:14px;padding:10px;font-size:12px;color:#222;line-height:1.35;}
+.setupStep{margin:8px 0;}
+.envList{margin:8px 0 0 0;padding-left:16px;}
+.pill{display:inline-block;border:1px solid rgba(0,0,0,.15);border-radius:999px;padding:2px 8px;margin-right:6px;font-size:11px;background:rgba(255,255,255,.7);}
+.btnRow{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
+.btn{appearance:none;border:none;border-radius:12px;padding:8px 10px;font-size:12px;font-weight:800;background:var(--btn);color:#fff;cursor:pointer;}
+.btn.secondary{background:rgba(0,0,0,.25);color:#111;border:1px solid rgba(0,0,0,.2);}
