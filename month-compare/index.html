@@ -4,60 +4,18 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Month Compare</title>
+
+  <link rel="stylesheet" href="/assets/setup-card.css?v=20260126-1" />
+
   <style>
-    :root{
-      --border: rgba(0,0,0,.08);
-      --shadow: 0 6px 18px rgba(0,0,0,.04);
-      --text: #111;
-    }
+    :root{ --border: rgba(0,0,0,.08); --shadow: 0 6px 18px rgba(0,0,0,.04); --text: #111; }
     *{ box-sizing:border-box; }
-    html, body{
-      margin:0;
-      padding:0;
-      background:#fff;
-      color:var(--text);
-      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans KR", Arial, sans-serif;
-      overflow-x:hidden;
-    }
-    .wrap{
-      max-width:1100px;
-      width:100%;
-      margin:0 auto;
-      padding:14px 14px 18px;
-      container-type: inline-size;
-      container-name: embed;
-    }
-    .grid{
-      display:grid;
-      grid-template-columns: max-content max-content;
-      gap:14px;
-      align-items:start;
-      justify-content:start;
-    }
-    .panel{
-      border:1px solid var(--border);
-      border-radius:14px;
-      background:#fff;
-      box-shadow: var(--shadow);
-      padding:14px 14px 12px;
-      min-height:260px;
-      overflow-x:auto;
-      overflow-y:hidden;
-      max-width:100%;
-    }
-    .panel h3{
-      margin:0 0 10px;
-      font-size:14px;
-      font-weight:900;
-      letter-spacing:-0.2px;
-      white-space:nowrap;
-    }
-    .chart{
-      display:inline-block;
-      width:fit-content;
-      max-width:none;
-      min-width:0;
-    }
+    html, body{ margin:0; padding:0; background:#fff; color:var(--text); font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans KR", Arial, sans-serif; overflow-x:hidden; }
+    .wrap{ max-width:1100px; width:100%; margin:0 auto; padding:14px 14px 18px; container-type: inline-size; container-name: embed; }
+    .grid{ display:grid; grid-template-columns: max-content max-content; gap:14px; align-items:start; justify-content:start; }
+    .panel{ border:1px solid var(--border); border-radius:14px; background:#fff; box-shadow: var(--shadow); padding:14px 14px 12px; min-height:260px; overflow-x:auto; overflow-y:hidden; max-width:100%; }
+    .panel h3{ margin:0 0 10px; font-size:14px; font-weight:900; letter-spacing:-0.2px; white-space:nowrap; }
+    .chart{ display:inline-block; width:fit-content; max-width:none; min-width:0; }
     @container embed (max-width: 980px){
       .grid{ grid-template-columns: 1fr; }
       .panel{ width:100%; }
@@ -69,7 +27,9 @@
   </style>
 </head>
 <body>
-  <div class="wrap">
+  <div id="setupRoot"></div>
+
+  <div class="wrap" data-app-section>
     <div class="grid">
       <div class="panel">
         <h3>전월 대비 · 업무유형</h3>
@@ -83,7 +43,7 @@
     </div>
   </div>
 
-  <!-- ✅ 캐시 방지: kpi와 동일하게 버전 파라미터 -->
-  <script src="/assets/app.js?v=20260121-1"></script>
+  <script src="/assets/setup-card.js?v=20260126-1"></script>
+  <script src="/assets/app.js?v=20260126-1"></script>
 </body>
 </html>
