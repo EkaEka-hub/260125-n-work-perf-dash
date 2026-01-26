@@ -19,130 +19,38 @@
       --deltaBg: rgba(0,0,0,0.06);
     }
     html,body{height:100%;}
-    body{
-      margin:0;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-      color: var(--text);
-      background:#fff;
-    }
-
+    body{ margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; color: var(--text); background:#fff; }
     .page{max-width: 1100px; margin: 0 auto; padding: 16px;}
-    .top{
-      display:flex; justify-content: space-between; align-items: baseline; gap: 8px;
-      margin-bottom: 12px; white-space: nowrap;
-    }
+    .top{ display:flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 12px; white-space: nowrap; }
     .top .title{font-size:14px; font-weight:850;}
     .top .date{font-size:12px; color: var(--sub); font-variant-numeric: tabular-nums;}
 
-    .grid2{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-    }
+    .grid2{ display:grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     @media (max-width: 900px){ .grid2{grid-template-columns: 1fr;} }
 
-    .card{
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 12px;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.04);
-    }
-    .card .label{
-      font-size: 13px;
-      font-weight: 850;
-      margin-bottom: 10px;
-    }
+    .card{ background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
+    .card .label{ font-size: 13px; font-weight: 850; margin-bottom: 10px; }
 
-    .item{
-      display:grid;
-      grid-template-columns: 1fr auto;
-      gap: 10px;
-      align-items: center;
-      margin: 10px 0;
-    }
-    .name{
-      font-size: 12px;
-      color: var(--muted);
-      white-space: nowrap;
-      overflow:hidden;
-      text-overflow: ellipsis;
-    }
-    .right{
-      display:flex;
-      align-items: center;
-      gap: 8px;
-      white-space: nowrap;
-      font-variant-numeric: tabular-nums;
-      font-size: 12px;
-      color: var(--sub);
-    }
-    .delta{
-      padding: 2px 8px;
-      border-radius: 999px;
-      background: var(--deltaBg);
-      color: #111;
-      font-weight: 800;
-      font-size: 11px;
-    }
-    .barWrap{
-      grid-column: 1 / -1;
-      height: 10px;
-      border-radius: 999px;
-      background: rgba(0,0,0,0.06);
-      overflow:hidden;
-    }
-    .barA{height:100%; background: var(--bar);}
-    .barB{height:100%; background: var(--bar2); margin-top:6px; border-radius:999px;}
+    .item{ display:grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; margin: 10px 0; }
+    .name{ font-size: 12px; color: var(--muted); white-space: nowrap; overflow:hidden; text-overflow: ellipsis; }
+    .right{ display:flex; align-items: center; gap: 8px; white-space: nowrap; font-variant-numeric: tabular-nums; font-size: 12px; color: var(--sub); }
+    .delta{ padding: 2px 8px; border-radius: 999px; background: var(--deltaBg); color: #111; font-weight: 900; font-size: 11px; }
 
-    /* ✅ Setup UI (today와 통일) */
-    .setupWrap{
-      max-width: 520px;
-      margin: 16px auto;
-      background: var(--callout);
-      border-radius: 18px;
-      padding: 14px;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.04);
-    }
-    .setupTitle{
-      font-size:12px; font-weight:600; color: var(--muted);
-      margin-bottom: 10px;
-    }
-    .setupBodyTitle{
-      font-size:14px; font-weight:800; color: var(--danger);
-      margin: 2px 0 10px 0;
-    }
-    .setupBox{
-      background: rgba(255,255,255,0.55);
-      border-radius: 14px;
-      padding: 10px;
-      font-size: 12px;
-      color: #222;
-      line-height: 1.35;
-    }
+    .barWrap{ grid-column: 1 / -1; height: 10px; border-radius: 999px; background: rgba(0,0,0,0.06); overflow:hidden; }
+    .barA{ height:100%; background: var(--bar); }
+    .barB{ height:100%; background: var(--bar2); margin-top:6px; border-radius:999px; }
+
+    /* Setup UI */
+    .setupWrap{ max-width: 520px; margin: 16px auto; background: var(--callout); border-radius: 18px; padding: 14px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
+    .setupTitle{ font-size:12px; font-weight:600; color: var(--muted); margin-bottom: 10px; }
+    .setupBodyTitle{ font-size:14px; font-weight:900; color: var(--danger); margin: 2px 0 10px 0; }
+    .setupBox{ background: rgba(255,255,255,0.55); border-radius: 14px; padding: 10px; font-size: 12px; color: #222; line-height: 1.35; }
     .setupStep{ margin: 8px 0; }
     .envList{ margin:8px 0 0 0; padding-left:16px; }
-    .pill{
-      display:inline-block;
-      border: 1px solid rgba(0,0,0,0.15);
-      border-radius: 999px;
-      padding: 2px 8px;
-      margin-right: 6px;
-      font-size: 11px;
-      background: rgba(255,255,255,0.7);
-    }
+    .pill{ display:inline-block; border: 1px solid rgba(0,0,0,0.15); border-radius: 999px; padding: 2px 8px; margin-right: 6px; font-size: 11px; background: rgba(255,255,255,0.7); }
     .btnRow{ display:flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
-    .btn{
-      appearance:none; border:none;
-      border-radius: 12px; padding: 8px 10px;
-      font-size: 12px; font-weight: 700;
-      background: var(--btn); color:#fff; cursor:pointer;
-    }
-    .btn.secondary{
-      background: rgba(0,0,0,0.25);
-      color: #111;
-      border: 1px solid rgba(0,0,0,0.2);
-    }
+    .btn{ appearance:none; border:none; border-radius: 12px; padding: 8px 10px; font-size: 12px; font-weight: 800; background: var(--btn); color:#fff; cursor:pointer; }
+    .btn.secondary{ background: rgba(0,0,0,0.25); color: #111; border: 1px solid rgba(0,0,0,0.2); }
   </style>
 </head>
 <body>
@@ -150,30 +58,23 @@
 
   <script>
     const app = document.getElementById("app");
-
     function copy(text){ try{ navigator.clipboard.writeText(text); }catch(e){} }
 
     function renderSetup(need){
-      const req = Array.isArray(need) && need.length
-        ? need
-        : ["NOTION_TOKEN","NOTION_DAILY_DB_ID","NOTION_TODO_DB_ID"];
-
-      const routes = ["/today","/kpi","/this-month","/month-compare"]
-        .map(p => `${location.origin}${p}`).join("\n");
+      const req = Array.isArray(need) && need.length ? need : ["NOTION_TOKEN","NOTION_DAILY_DB_ID","NOTION_TODO_DB_ID"];
+      const routes = ["/today","/kpi","/this-month","/month-compare"].map(p => `${location.origin}${p}`).join("\n");
 
       app.innerHTML = `
         <div class="setupWrap">
           <div class="setupTitle">Month Compare</div>
-          <div class="setupBodyTitle">설정이 필요해요</div>
+          <div class="setupBodyTitle">⚠️ 설정이 필요해요</div>
           <div class="setupBox">
             <div class="setupStep"><b>1)</b> Vercel 프로젝트에서 <b>환경변수</b>를 입력해야 위젯이 작동합니다.</div>
             <div class="setupStep"><b>2)</b> 필수 3개:</div>
-            <ul class="envList">
-              ${req.map(k=>`<li><span class="pill">${k}</span></li>`).join("")}
-            </ul>
-            <div class="setupStep" style="margin-top:10px;"><b>3)</b> 배포 후 노션에는 아래 경로를 임베드하세요.</div>
+            <ul class="envList">${req.map(k=>`<li><span class="pill">${k}</span></li>`).join("")}</ul>
+            <div class="setupStep" style="margin-top:10px;"><b>3)</b> 배포 후 노션에는 아래 <b>4개 주소</b>를 임베드하세요.</div>
             <div class="btnRow">
-              <button class="btn" id="copyRoutes">임베드 주소 복사</button>
+              <button class="btn" id="copyRoutes">4개 임베드 주소 복사</button>
               <button class="btn secondary" id="retry">다시 불러오기</button>
             </div>
           </div>
@@ -209,12 +110,8 @@
                   <span class="delta">${sign}${delta}</span>
                 </div>
 
-                <div class="barWrap" aria-label="${name}">
-                  <div class="barA" style="width:${wThis}%;"></div>
-                </div>
-                <div class="barWrap" style="height:6px; margin-top:-6px;">
-                  <div class="barB" style="width:${wLast}%;"></div>
-                </div>
+                <div class="barWrap"><div class="barA" style="width:${wThis}%;"></div></div>
+                <div class="barWrap" style="height:6px; margin-top:-6px;"><div class="barB" style="width:${wLast}%;"></div></div>
               </div>
             `;
           }).join("")}
@@ -234,18 +131,8 @@
         </div>
 
         <div class="grid2">
-          ${renderCompareCard(
-            "전월 대비 · 업무유형",
-            safeArr(j?.work?.labels),
-            safeArr(j?.work?.this),
-            safeArr(j?.work?.last)
-          )}
-          ${renderCompareCard(
-            "전월 대비 · 성과유형",
-            safeArr(j?.outcome?.labels),
-            safeArr(j?.outcome?.this),
-            safeArr(j?.outcome?.last)
-          )}
+          ${renderCompareCard("전월 대비 · 업무유형", safeArr(j?.work?.labels), safeArr(j?.work?.this), safeArr(j?.work?.last))}
+          ${renderCompareCard("전월 대비 · 성과유형", safeArr(j?.outcome?.labels), safeArr(j?.outcome?.this), safeArr(j?.outcome?.last))}
         </div>
 
         <div style="margin-top:10px; font-size:11px; color:var(--sub);">
@@ -257,14 +144,9 @@
     async function main(){
       const r = await fetch("/api/monthly?t=" + Date.now(), { cache:"no-store" });
       const j = await r.json().catch(()=> ({}));
-
-      if (!r.ok || j?.error === "Missing env"){
-        renderSetup(j?.need);
-        return;
-      }
+      if (!r.ok || j?.error === "Missing env"){ renderSetup(j?.need); return; }
       renderPage(j);
     }
-
     main();
   </script>
 </body>
