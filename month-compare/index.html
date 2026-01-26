@@ -6,148 +6,377 @@
   <title>Month Compare</title>
   <style>
     :root{
+      --bg:#fff;
+      --card:#fff;
+      --border:rgba(0,0,0,0.08);
+      --shadow:0 1px 2px rgba(0,0,0,0.05);
+
+      --text:#111;
+      --muted:#666;
+
+      --thisWork:#6b8cff;     /* 업무유형(이번달) */
+      --thisOutcome:#f59a3b;  /* 성과유형(이번달) */
+      --last:#cfcfcf;         /* 전월 */
+
+      --delta:#19a34a;        /* 증감 */
+      --danger:#d11a2a;
+
       --callout:#fff7c9;
-      --text:#222;
-      --muted:#555;
-      --sub:#777;
-      --danger:#b42318;
-      --btn:#111;
-      --card:#ffffff;
-      --border: rgba(0,0,0,0.08);
-      --bar: rgba(17,17,17,0.18);
-      --bar2: rgba(17,17,17,0.10);
-      --deltaBg: rgba(0,0,0,0.06);
+      --calloutBox:#fffbe3;
     }
+
     html,body{height:100%;}
-    body{ margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; color: var(--text); background:#fff; }
-    .page{max-width: 1100px; margin: 0 auto; padding: 16px;}
-    .top{ display:flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 12px; white-space: nowrap; }
-    .top .title{font-size:14px; font-weight:850;}
-    .top .date{font-size:12px; color: var(--sub); font-variant-numeric: tabular-nums;}
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background:var(--bg);
+      color:var(--text);
+    }
 
-    .grid2{ display:grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    @media (max-width: 900px){ .grid2{grid-template-columns: 1fr;} }
+    .page{
+      max-width: 980px;
+      margin: 28px auto;
+      padding: 0 18px;
+    }
 
-    .card{ background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
-    .card .label{ font-size: 13px; font-weight: 850; margin-bottom: 10px; }
+    .topRow{
+      display:flex;
+      justify-content:space-between;
+      align-items:baseline;
+      gap:12px;
+      margin-bottom: 14px;
+    }
 
-    .item{ display:grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; margin: 10px 0; }
-    .name{ font-size: 12px; color: var(--muted); white-space: nowrap; overflow:hidden; text-overflow: ellipsis; }
-    .right{ display:flex; align-items: center; gap: 8px; white-space: nowrap; font-variant-numeric: tabular-nums; font-size: 12px; color: var(--sub); }
-    .delta{ padding: 2px 8px; border-radius: 999px; background: var(--deltaBg); color: #111; font-weight: 900; font-size: 11px; }
+    .h1{
+      font-size:20px;
+      font-weight:800;
+      letter-spacing:-0.2px;
+      margin:0;
+    }
 
-    .barWrap{ grid-column: 1 / -1; height: 10px; border-radius: 999px; background: rgba(0,0,0,0.06); overflow:hidden; }
-    .barA{ height:100%; background: var(--bar); }
-    .barB{ height:100%; background: var(--bar2); margin-top:6px; border-radius:999px; }
+    .range{
+      font-size:12px;
+      color:var(--muted);
+      font-variant-numeric: tabular-nums;
+      white-space:nowrap;
+    }
 
-    /* Setup UI */
-    .setupWrap{ max-width: 520px; margin: 16px auto; background: var(--callout); border-radius: 18px; padding: 14px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
-    .setupTitle{ font-size:12px; font-weight:600; color: var(--muted); margin-bottom: 10px; }
-    .setupBodyTitle{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:900;color:var(--danger);margin:2px 0 10px;line-height:1.15;}.warnIcon{font-size:16px;line-height:1;transform:translateY(-0.5px);}
-    .setupBox{ background: rgba(255,255,255,0.55); border-radius: 14px; padding: 10px; font-size: 12px; color: #222; line-height: 1.35; }
-    .setupStep{ margin: 8px 0; }
-    .envList{ margin:8px 0 0 0; padding-left:16px; }
-    .pill{ display:inline-block; border: 1px solid rgba(0,0,0,0.15); border-radius: 999px; padding: 2px 8px; margin-right: 6px; font-size: 11px; background: rgba(255,255,255,0.7); }
-    .btnRow{ display:flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
-    .btn{ appearance:none; border:none; border-radius: 12px; padding: 8px 10px; font-size: 12px; font-weight: 800; background: var(--btn); color:#fff; cursor:pointer; }
-    .btn.secondary{ background: rgba(0,0,0,0.25); color: #111; border: 1px solid rgba(0,0,0,0.2); }
+    .grid2{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 860px){
+      .grid2{ grid-template-columns: 1fr; }
+    }
+
+    .card{
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:16px;
+      box-shadow: var(--shadow);
+      padding: 14px 14px 12px;
+    }
+
+    .cardTitle{
+      font-size:14px;
+      font-weight:800;
+      margin:0 0 12px 0;
+      letter-spacing:-0.1px;
+    }
+
+    /* ===== chart (세로 막대) ===== */
+    .chart{
+      display:flex;
+      gap: 14px;
+      align-items:flex-end;
+      height: 220px;
+      padding: 6px 4px 0;
+      overflow-x:auto;
+      overflow-y:hidden;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .col{
+      width: 90px;
+      min-width: 90px;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap: 8px;
+      position:relative;
+    }
+
+    .delta{
+      position:absolute;
+      top: -2px;
+      font-size:12px;
+      font-weight:800;
+      color: var(--delta);
+      display:flex;
+      align-items:center;
+      gap:4px;
+      white-space:nowrap;
+      transform: translateY(-100%);
+    }
+
+    .delta .tri{
+      font-size:12px;
+      line-height:1;
+    }
+
+    .bars{
+      width: 100%;
+      height: 170px;
+      display:flex;
+      align-items:flex-end;
+      justify-content:center;
+      gap: 8px;
+    }
+
+    .bar{
+      width: 34px;
+      border-radius: 10px;
+      display:flex;
+      align-items:flex-start;
+      justify-content:center;
+      padding-top: 6px;
+      box-sizing:border-box;
+      position:relative;
+    }
+
+    .bar.last{
+      width: 22px;
+      background: var(--last);
+      color:#222;
+      border-radius: 10px;
+    }
+
+    .bar.this.work{
+      background: var(--thisWork);
+      color:#111;
+    }
+
+    .bar.this.outcome{
+      background: var(--thisOutcome);
+      color:#111;
+    }
+
+    .num{
+      font-size:12px;
+      font-weight:900;
+      background: rgba(255,255,255,0.65);
+      border-radius: 8px;
+      padding: 2px 6px;
+      line-height:1.1;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .label{
+      font-size:12px;
+      color: var(--text);
+      text-align:center;
+      font-weight:700;
+      letter-spacing:-0.1px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      max-width: 100%;
+    }
+
+    .foot{
+      margin-top: 10px;
+      font-size:11px;
+      color: var(--muted);
+    }
+
+    /* ===== setup card (env 없을 때) ===== */
+    .setupWrap{
+      max-width: 520px;
+      margin: 38px auto;
+      background: var(--callout);
+      border-radius: 18px;
+      padding: 14px;
+      box-shadow: var(--shadow);
+    }
+    .setupInner{
+      background: var(--calloutBox);
+      border-radius: 14px;
+      padding: 14px;
+      margin-top: 10px;
+    }
+    .setupTitle{
+      font-size:13px;
+      font-weight:800;
+      color: #333;
+      margin:0;
+    }
+    .setupBodyTitle{
+      display:flex;align-items:center;gap:8px;
+      font-size:14px;font-weight:900;color:var(--danger);
+      margin:6px 0 10px;line-height:1.15;
+    }
+    .warnIcon{font-size:16px;line-height:1;transform:translateY(-0.5px);}
+    .setupText{
+      font-size:12px;
+      color:#222;
+      line-height:1.6;
+      margin: 0 0 10px 0;
+    }
+    .pill{
+      display:inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(0,0,0,0.15);
+      background: rgba(255,255,255,0.65);
+      font-weight:800;
+      font-size:11px;
+      margin-left: 6px;
+    }
+    .btnRow{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;}
+    .btn{
+      border:0;
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-weight:900;
+      cursor:pointer;
+    }
+    .btn.primary{background:#111;color:#fff;}
+    .btn.gray{background:#d6d6d6;color:#111;}
   </style>
 </head>
 <body>
-  <div class="page" id="app"></div>
+  <div class="page" id="page" style="display:none;">
+    <div class="topRow">
+      <h1 class="h1">전월 대비</h1>
+      <div class="range" id="range"></div>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <div class="cardTitle">전월 대비 · 업무유형</div>
+        <div class="chart" id="chartWork"></div>
+      </div>
+
+      <div class="card">
+        <div class="cardTitle">전월 대비 · 성과유형</div>
+        <div class="chart" id="chartOutcome"></div>
+      </div>
+    </div>
+
+    <div class="foot">막대(회색)=전월, 막대(컬러)=이번달 · ▲ 숫자=(이번달-전월) 증감</div>
+  </div>
+
+  <!-- env 없을 때 안내 -->
+  <div class="setupWrap" id="setup" style="display:none;">
+    <div style="display:flex;justify-content:space-between;gap:10px;align-items:baseline;">
+      <div class="setupTitle">Month Compare</div>
+    </div>
+    <div class="setupBodyTitle"><span class="warnIcon">⚠️</span><span>설정이 필요해요</span></div>
+    <div class="setupInner">
+      <div class="setupText">
+        1) Vercel 프로젝트에서 환경변수를 입력해야 위젯이 작동합니다.<br/>
+        2) 필수 3개:
+        <ul style="margin:6px 0 0 18px;padding:0;">
+          <li><span class="pill">NOTION_TOKEN</span></li>
+          <li><span class="pill">NOTION_DAILY_DB_ID</span></li>
+          <li><span class="pill">NOTION_TODO_DB_ID</span></li>
+        </ul>
+        3) 배포 후 노션에는 아래 4개 주소를 임베드하세요.
+      </div>
+      <div class="btnRow">
+        <button class="btn primary" id="copyBtn">4개 임베드 주소 복사</button>
+        <button class="btn gray" id="reloadBtn">다시 불러오기</button>
+      </div>
+    </div>
+  </div>
 
   <script>
-    const app = document.getElementById("app");
-    function copy(text){ try{ navigator.clipboard.writeText(text); }catch(e){} }
+    function qs(id){ return document.getElementById(id); }
 
-    function renderSetup(need){
-      const req = Array.isArray(need) && need.length ? need : ["NOTION_TOKEN","NOTION_DAILY_DB_ID","NOTION_TODO_DB_ID"];
-      const routes = ["/today","/kpi","/this-month","/month-compare"].map(p => `${location.origin}${p}`).join("\n");
+    function buildEmbedUrls(){
+      const base = location.origin;
+      return [
+        base + "/today",
+        base + "/kpi",
+        base + "/this-month",
+        base + "/month-compare",
+      ].join("\n");
+    }
 
-      app.innerHTML = `
-        <div class="setupWrap">
-          <div class="setupTitle">Month Compare</div>
-          <div class="setupBodyTitle"><span class="warnIcon">⚠️</span><span>설정이 필요해요</span></div>
-          <div class="setupBox">
-            <div class="setupStep"><b>1)</b> Vercel 프로젝트에서 <b>환경변수</b>를 입력해야 위젯이 작동합니다.</div>
-            <div class="setupStep"><b>2)</b> 필수 3개:</div>
-            <ul class="envList">${req.map(k=>`<li><span class="pill">${k}</span></li>`).join("")}</ul>
-            <div class="setupStep" style="margin-top:10px;"><b>3)</b> 배포 후 노션에는 아래 <b>4개 주소</b>를 임베드하세요.</div>
-            <div class="btnRow">
-              <button class="btn" id="copyRoutes">4개 임베드 주소 복사</button>
-              <button class="btn secondary" id="retry">다시 불러오기</button>
+    qs("copyBtn").addEventListener("click", async () => {
+      try{
+        await navigator.clipboard.writeText(buildEmbedUrls());
+        qs("copyBtn").textContent = "복사 완료!";
+        setTimeout(()=>qs("copyBtn").textContent="4개 임베드 주소 복사", 900);
+      }catch(e){}
+    });
+    qs("reloadBtn").addEventListener("click", () => location.reload());
+
+    function safeNum(n){ return (typeof n === "number" && isFinite(n)) ? n : 0; }
+
+    function renderChart(el, labels, lastArr, thisArr, mode){
+      const maxVal = Math.max(1, ...lastArr.map(safeNum), ...thisArr.map(safeNum));
+      el.innerHTML = labels.map((lab, i) => {
+        const lastV = safeNum(lastArr[i]);
+        const thisV = safeNum(thisArr[i]);
+        const delta = thisV - lastV;
+
+        const lastH = Math.max(2, Math.round((lastV / maxVal) * 170));
+        const thisH = Math.max(2, Math.round((thisV / maxVal) * 170));
+
+        const deltaHtml = (delta !== 0)
+          ? `<div class="delta"><span class="tri">▲</span><span>${delta > 0 ? "+"+delta : delta}</span></div>`
+          : ``;
+
+        const thisClass = (mode === "work") ? "work" : "outcome";
+
+        return `
+          <div class="col" title="${lab}">
+            ${deltaHtml}
+            <div class="bars">
+              <div class="bar last" style="height:${lastH}px;"><span class="num">${lastV}</span></div>
+              <div class="bar this ${thisClass}" style="height:${thisH}px;"><span class="num">${thisV}</span></div>
             </div>
+            <div class="label">${lab}</div>
           </div>
-        </div>
-      `;
-      document.getElementById("copyRoutes").onclick = () => copy(routes);
-      document.getElementById("retry").onclick = () => location.reload();
+        `;
+      }).join("");
     }
 
-    function safeArr(a){ return Array.isArray(a) ? a : []; }
-    function safeNumber(x){ const n = Number(x); return Number.isFinite(n) ? n : 0; }
-
-    function renderCompareCard(title, labels, thisArr, lastArr){
-      const all = thisArr.concat(lastArr).map(safeNumber);
-      const maxV = Math.max(1, ...all);
-
-      return `
-        <div class="card">
-          <div class="label">${title}</div>
-          ${labels.map((name, i) => {
-            const vThis = safeNumber(thisArr[i]);
-            const vLast = safeNumber(lastArr[i]);
-            const delta = vThis - vLast;
-            const sign = delta > 0 ? "+" : "";
-            const wThis = Math.round((vThis / maxV) * 100);
-            const wLast = Math.round((vLast / maxV) * 100);
-
-            return `
-              <div class="item">
-                <div class="name">${name}</div>
-                <div class="right">
-                  <span>이번달 ${vThis}</span>
-                  <span class="delta">${sign}${delta}</span>
-                </div>
-
-                <div class="barWrap"><div class="barA" style="width:${wThis}%;"></div></div>
-                <div class="barWrap" style="height:6px; margin-top:-6px;"><div class="barB" style="width:${wLast}%;"></div></div>
-              </div>
-            `;
-          }).join("")}
-        </div>
-      `;
-    }
-
-    function renderPage(j){
-      const thisMonth = j?.meta?.month || j?.kpi?.month || "";
-      const lastMonth = j?.meta?.lastMonth || "";
-      const dateText = (thisMonth && lastMonth) ? `${lastMonth} → ${thisMonth}` : (thisMonth || "");
-
-      app.innerHTML = `
-        <div class="top">
-          <div class="title">전월 대비</div>
-          <div class="date">${dateText}</div>
-        </div>
-
-        <div class="grid2">
-          ${renderCompareCard("전월 대비 · 업무유형", safeArr(j?.work?.labels), safeArr(j?.work?.this), safeArr(j?.work?.last))}
-          ${renderCompareCard("전월 대비 · 성과유형", safeArr(j?.outcome?.labels), safeArr(j?.outcome?.this), safeArr(j?.outcome?.last))}
-        </div>
-
-        <div style="margin-top:10px; font-size:11px; color:var(--sub);">
-          막대(진한색)=이번달, 얇은 막대(연한색)=전월 · 숫자는 (이번달-전월) 증감
-        </div>
-      `;
+    async function fetchMonthly(){
+      const r = await fetch("/api/monthly?t=" + Date.now(), { cache:"no-store" });
+      return await r.json();
     }
 
     async function main(){
-      const r = await fetch("/api/monthly?t=" + Date.now(), { cache:"no-store" });
-      const j = await r.json().catch(()=> ({}));
-      if (!r.ok || j?.error === "Missing env"){ renderSetup(j?.need); return; }
-      renderPage(j);
+      const j = await fetchMonthly();
+
+      // env 없을 때
+      if (j?.error === "Missing env" || j?.need){
+        qs("setup").style.display = "block";
+        return;
+      }
+
+      // 상단 기간 표시(있으면 표시)
+      const lastMonth = j?.meta?.lastMonth || j?.meta?.last_month || j?.meta?.prevMonth || "-";
+      const month = j?.meta?.month || j?.meta?.thisMonth || "-";
+      qs("range").textContent = (lastMonth !== "-" && month !== "-") ? `${lastMonth} → ${month}` : "";
+
+      // 기대 데이터 구조: j.work / j.outcome (labels, last, this)
+      const w = j?.work || {};
+      const o = j?.outcome || {};
+
+      renderChart(qs("chartWork"), (w.labels||[]), (w.last||[]), (w.this||[]), "work");
+      renderChart(qs("chartOutcome"), (o.labels||[]), (o.last||[]), (o.this||[]), "outcome");
+
+      qs("page").style.display = "block";
     }
-    main();
+
+    main().catch(() => {
+      qs("setup").style.display = "block";
+    });
   </script>
 </body>
 </html>
