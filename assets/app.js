@@ -183,7 +183,7 @@
     const wrap = document.createElement("div");
     wrap.style.display = "inline-flex";
     wrap.style.width = "fit-content";
-    wrap.style.gap = "4px";               // ✅ [요청] 유형별(카테고리) 간격 최소화
+    wrap.style.gap = "4px";               // ✅ 유형별(카테고리) 간격 최소화
     wrap.style.alignItems = "flex-end";
     wrap.style.justifyContent = "flex-start";
     wrap.style.flexWrap = "nowrap";
@@ -243,7 +243,6 @@
           const h = (pct / 100) * BAR_H;
           bar.style.height = h.toFixed(1) + "px";
 
-          // ✅ 값 레이블 기존 규칙 유지
           if (h < 26) {
             val.style.top = "-16px";
             val.style.color = "rgba(0,0,0,.55)";
@@ -266,11 +265,10 @@
       chartArea.appendChild(lastBar.barWrap);
       chartArea.appendChild(thisBar.barWrap);
 
-      // ✅ 변동 레이블: (가로) 이번달 막대 중앙 / (세로) 막대 바로 위 / (폭) 막대 폭 안에서만
       if (diff !== 0) {
         const delta = document.createElement("div");
         delta.style.position = "absolute";
-        delta.style.width = BAR_W + "px";         // ✅ 막대 폭 안에만
+        delta.style.width = BAR_W + "px";
         delta.style.textAlign = "center";
         delta.style.whiteSpace = "nowrap";
         delta.style.overflow = "hidden";
@@ -286,12 +284,10 @@
           const h = Number(thisBar.barWrap.__barH || 0);
           const valOutside = !!thisBar.barWrap.__valOutside;
 
-          // ✅ 가로: 이번달 막대 중앙
           const leftPx = thisBar.barWrap.offsetLeft + (BAR_W / 2);
           delta.style.left = leftPx + "px";
           delta.style.transform = "translateX(-50%)";
 
-          // ✅ 세로: 막대 바로 위 (값 레이블이 밖이면 겹침 방지)
           let bottom = h + 6;
           if (valOutside) bottom = h + 24;
 
@@ -331,10 +327,8 @@
   try{
     const data = await getData();
 
-    // KPI
     if(data?.kpi) renderKpi(data.kpi, data);
 
-    // this-month
     if($("chartWorkThis") && data?.work){
       renderThisMonthBars("chartWorkThis", data.work.labels || [], data.work.this || [], COLOR_WORK);
     }
@@ -342,7 +336,6 @@
       renderThisMonthBars("chartOutcomeThis", data.outcome.labels || [], data.outcome.this || [], COLOR_OUTCOME);
     }
 
-    // month-compare
     if($("chartWorkDelta") && data?.work){
       renderMonthCompareVertical("chartWorkDelta", data.work.labels || [], data.work.last || [], data.work.this || [], COLOR_WORK);
     }
