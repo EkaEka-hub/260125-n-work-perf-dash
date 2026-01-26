@@ -4,157 +4,46 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>This Month</title>
+
+  <link rel="stylesheet" href="/assets/setup-card.css?v=20260126-1" />
+
   <style>
-    :root{--blue:#5b8def;--orange:#ff8a3d;--track:rgba(0,0,0,.07);--text:#111;--muted:rgba(0,0,0,.55);--card-border:rgba(0,0,0,.08);--shadow:0 6px 18px rgba(0,0,0,.04);--radius:16px;--bar-h:14px;--gap-y:8px;--label-w:118px;}
-    body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans KR",Arial,sans-serif;background:#fff;color:var(--text);}
-    .wrap{max-width:900px;margin:0 auto;padding:10px 10px 12px;}
-    .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:stretch;}
-    @media (max-width:860px){.grid{grid-template-columns:1fr;}}
-    .panel{border:1px solid var(--card-border);border-radius:var(--radius);background:#fff;box-shadow:var(--shadow);padding:10px 12px;overflow:hidden;}
-    .panel-title{font-size:14px;font-weight:900;letter-spacing:-0.2px;margin:0 0 8px;}
-    .rows{display:flex;flex-direction:column;gap:var(--gap-y);}
-    .row{display:grid;grid-template-columns:var(--label-w) 1fr;align-items:center;column-gap:10px;}
-    .label{font-size:13px;font-weight:800;letter-spacing:-0.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-    .track{position:relative;height:var(--bar-h);background:var(--track);border-radius:999px;overflow:hidden;}
-    .fill{position:absolute;left:0;top:0;bottom:0;width:0%;border-radius:999px;display:flex;align-items:center;padding-left:8px;box-sizing:border-box;min-width:0;}
-    .val-in{font-size:12px;font-weight:900;color:#fff;line-height:1;text-shadow:0 1px 1px rgba(0,0,0,.18);white-space:nowrap;}
-    .val-zero{position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:12px;font-weight:900;color:rgba(0,0,0,.45);line-height:1;white-space:nowrap;}
-    .hint{margin-top:6px;font-size:12px;color:var(--muted);}
+    :root{
+      --card-border: rgba(0,0,0,.08);
+      --shadow: 0 6px 18px rgba(0,0,0,.04);
+      --radius: 16px;
+      --text: #111;
+      --muted: rgba(0,0,0,.55);
+    }
+    body{ margin:0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans KR", Arial, sans-serif; background:#fff; color:var(--text); }
+    .wrap{ max-width: 900px; margin: 0 auto; padding: 10px 10px 12px; }
+    .grid{ display:grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: stretch; }
+    @media (max-width: 860px){ .grid{ grid-template-columns: 1fr; } }
+    .panel{ border:1px solid var(--card-border); border-radius: var(--radius); background:#fff; box-shadow: var(--shadow); padding: 10px 12px; overflow:hidden; }
+    .panel-title{ font-size: 14px; font-weight: 900; letter-spacing: -0.2px; margin: 0 0 8px; }
+    .hint{ margin-top: 6px; font-size: 12px; color: var(--muted); }
   </style>
 </head>
 <body>
-  <div class="wrap">
+  <div id="setupRoot"></div>
+
+  <div class="wrap" data-app-section>
     <div class="grid">
       <section class="panel">
         <h2 class="panel-title">업무유형</h2>
-        <div class="rows" id="workRows"></div>
+        <div id="chartWorkThis"></div>
         <div class="hint" id="workHint"></div>
       </section>
 
       <section class="panel">
         <h2 class="panel-title">성과유형</h2>
-        <div class="rows" id="outRows"></div>
+        <div id="chartOutcomeThis"></div>
         <div class="hint" id="outHint"></div>
       </section>
     </div>
   </div>
 
-  <script>
-    (async function(){
-      const $ = (id) => document.getElementById(id);
-      function clear(el){ while(el.firstChild) el.removeChild(el.firstChild); }
-
-      function setupUi(){
-        const origin = location.origin;
-        const urls = [origin+"/today",origin+"/kpi",origin+"/this-month",origin+"/month-compare"].join("\\n");
-        document.body.innerHTML =
-          '<div style="max-width:640px;margin:16px auto;padding:0 12px;font-family:system-ui,-apple-system,\\'Segoe UI\\',Roboto,\\'Noto Sans KR\\',Arial,sans-serif;">' +
-          '<div style="background:#fff7c9;border-radius:18px;padding:14px 14px;box-shadow:0 1px 2px rgba(0,0,0,.04);">' +
-          '<div style="font-size:12px;font-weight:700;color:rgba(0,0,0,.55);margin:0 0 10px;">This Month ·</div>' +
-          '<div style="display:flex;align-items:center;gap:8px;margin:0 0 12px;"><div style="font-size:18px;line-height:1;">⚠️</div><div style="font-size:16px;font-weight:900;color:#d11;">설정이 필요해요</div></div>' +
-          '<div style="background:rgba(255,255,255,.55);border-radius:14px;padding:12px 12px;">' +
-          '<div style="font-size:13px;font-weight:800;margin:0 0 8px;">1) Vercel 프로젝트에서 환경변수를 입력해야 위젯이 작동합니다.</div>' +
-          '<div style="font-size:13px;font-weight:900;margin:0 0 6px;">2) 필수 3개:</div>' +
-          '<ul style="margin:0 0 10px 18px;padding:0;font-size:13px;font-weight:800;">' +
-          '<li><code style="background:#fff;border:1px solid rgba(0,0,0,.12);padding:2px 6px;border-radius:999px;">NOTION_TOKEN</code></li>' +
-          '<li><code style="background:#fff;border:1px solid rgba(0,0,0,.12);padding:2px 6px;border-radius:999px;">NOTION_DAILY_DB_ID</code></li>' +
-          '<li><code style="background:#fff;border:1px solid rgba(0,0,0,.12);padding:2px 6px;border-radius:999px;">NOTION_TODO_DB_ID</code></li>' +
-          '</ul>' +
-          '<div style="font-size:13px;font-weight:800;margin:0 0 10px;">3) 배포 후 노션에는 아래 4개 주소를 임베드하세요.</div>' +
-          '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">' +
-          '<button id="btnCopyEmbeds" style="border:0;border-radius:12px;padding:10px 12px;font-size:13px;font-weight:900;background:#111;color:#fff;cursor:pointer;">4개 임베드 주소 복사</button>' +
-          '<button id="btnReload" style="border:0;border-radius:12px;padding:10px 12px;font-size:13px;font-weight:900;background:rgba(0,0,0,.2);color:#111;cursor:pointer;">다시 불러오기</button>' +
-          '</div>' +
-          '<pre id="embedList" style="margin:10px 0 0;font-size:12px;line-height:1.4;white-space:pre-wrap;word-break:break-all;background:transparent;border:0;color:rgba(0,0,0,.7);">'+urls+'</pre>' +
-          '</div></div></div>';
-
-        const btnCopy = document.getElementById("btnCopyEmbeds");
-        const btnReload = document.getElementById("btnReload");
-        const text = document.getElementById("embedList")?.textContent || "";
-        if(btnCopy) btnCopy.addEventListener("click", async () => {
-          try{ await navigator.clipboard.writeText(text.trim()); btnCopy.textContent="복사됨!"; setTimeout(()=>btnCopy.textContent="4개 임베드 주소 복사", 900); }
-          catch(e){ alert("복사가 안되면 아래 주소를 드래그해서 복사해줘."); }
-        });
-        if(btnReload) btnReload.addEventListener("click", () => location.reload());
-      }
-
-      function makeRow(label, value, max, color){
-        const row = document.createElement("div");
-        row.className = "row";
-
-        const l = document.createElement("div");
-        l.className = "label";
-        l.textContent = label;
-
-        const track = document.createElement("div");
-        track.className = "track";
-
-        if(value > 0){
-          const pct = max > 0 ? (value / max) * 100 : 0;
-          const fill = document.createElement("div");
-          fill.className = "fill";
-          fill.style.width = Math.max(0, Math.min(100, pct)) + "%";
-          fill.style.background = color;
-
-          const v = document.createElement("span");
-          v.className = "val-in";
-          v.textContent = String(value);
-
-          fill.appendChild(v);
-          track.appendChild(fill);
-        }else{
-          const vz = document.createElement("span");
-          vz.className = "val-zero";
-          vz.textContent = "0";
-          track.appendChild(vz);
-        }
-
-        row.appendChild(l);
-        row.appendChild(track);
-        return row;
-      }
-
-      function render(containerId, hintId, labels, values, color){
-        const box = $(containerId);
-        const hint = $(hintId);
-        clear(box);
-
-        if(!Array.isArray(labels) || !Array.isArray(values) || labels.length === 0){
-          hint.textContent = "데이터 없음";
-          return;
-        }
-
-        const max = Math.max(1, ...values.map(v => Number(v) || 0));
-        labels.forEach((lab, i) => {
-          const v = Number(values[i] || 0);
-          box.appendChild(makeRow(lab, v, max, color));
-        });
-
-        hint.textContent = "";
-      }
-
-      try{
-        const res = await fetch("/api/monthly", { cache: "no-store" });
-        const data = await res.json();
-
-        if(data?.error){
-          if(String(data.error).includes("Missing NOTION_") || String(data.error).includes("Missing env")){
-            setupUi();
-            return;
-          }
-          $("workHint").textContent = data.error;
-          $("outHint").textContent = data.error;
-          return;
-        }
-
-        render("workRows", "workHint", data?.work?.labels || [], data?.work?.this || [], getComputedStyle(document.documentElement).getPropertyValue("--blue").trim() || "#5b8def");
-        render("outRows",  "outHint",  data?.outcome?.labels || [], data?.outcome?.this || [], getComputedStyle(document.documentElement).getPropertyValue("--orange").trim() || "#ff8a3d");
-
-      }catch(e){
-        $("workHint").textContent = String(e?.message || e);
-        $("outHint").textContent  = String(e?.message || e);
-      }
-    })();
-  </script>
+  <script src="/assets/setup-card.js?v=20260126-1"></script>
+  <script src="/assets/app.js?v=20260126-1"></script>
 </body>
 </html>
