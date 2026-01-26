@@ -1,4 +1,4 @@
-// /assets/app.js (통합: KPI + this-month + month-compare)
+// /assets/app.js (KPI + month-compare) + Missing env 안내 UI 유지
 (async function(){
   const $ = (id) => document.getElementById(id);
 
@@ -11,20 +11,95 @@
     const x = Number(n || 0);
     if(x > 0) return { t: `▲ ${x}`, c: "rgba(34,197,94,1)" };
     if(x < 0) return { t: `▼ ${Math.abs(x)}`, c: "rgba(239,68,68,1)" };
-    return { t: "", c: "rgba(0,0,0,.45)" }; // 0이면 표시 안함
+    return { t: "", c: "rgba(0,0,0,.45)" };
   }
 
-  const COLOR_WORK = "rgba(59,130,246,0.78)";     // 업무: 파랑
-  const COLOR_OUTCOME = "rgba(249,115,22,0.78)";  // 성과: 주황
+  const COLOR_WORK = "rgba(59,130,246,0.78)";
+  const COLOR_OUTCOME = "rgba(249,115,22,0.78)";
   const COLOR_ZERO = "rgba(0,0,0,0.18)";
   const COLOR_LAST = "rgba(0,0,0,0.18)";
 
   const API_URL = `/api/monthly${location.search || ""}`;
 
+  function setupHtml(pageTitle){
+    const origin = location.origin;
+    const urls = [
+      `${origin}/today`,
+      `${origin}/kpi`,
+      `${origin}/this-month`,
+      `${origin}/month-compare`,
+    ].join("\n");
+
+    return `
+      <div style="max-width:640px;margin:16px auto;padding:0 12px;font-family:system-ui,-apple-system,'Segoe UI',Roboto,'Noto Sans KR',Arial,sans-serif;">
+        <div style="background:#fff7c9;border-radius:18px;padding:14px 14px;box-shadow:0 1px 2px rgba(0,0,0,.04);">
+          <div style="font-size:12px;font-weight:700;color:rgba(0,0,0,.55);margin:0 0 10px;">${pageTitle} ·</div>
+          <div style="display:flex;align-items:center;gap:8px;margin:0 0 12px;">
+            <div style="font-size:18px;line-height:1;">⚠️</div>
+            <div style="font-size:16px;font-weight:900;color:#d11;">설정이 필요해요</div>
+          </div>
+
+          <div style="background:rgba(255,255,255,.55);border-radius:14px;padding:12px 12px;">
+            <div style="font-size:13px;font-weight:800;margin:0 0 8px;">1) Vercel 프로젝트에서 환경변수를 입력해야 위젯이 작동합니다.</div>
+            <div style="font-size:13px;font-weight:900;margin:0 0 6px;">2) 필수 3개:</div>
+            <ul style="margin:0 0 10px 18px;padding:0;font-size:13px;font-weight:800;">
+              <li><code style="background:#fff;border:1px solid rgba(0,0,0,.12);padding:2px 6px;border-radius:999px;">NOTION_TOKEN</code></li>
+              <li><code style="background:#fff;border:1px solid rgba(0,0,0,.12);padding:2px 6px;border-radius:999px;">NOTION_DAILY_DB_ID</code></li>
+              <li><code style="background:#fff;border:1px solid rgba(0,0,0,.12);padding:2px 6px;border-radius:999px;">NOTION_TODO_DB_ID</code></li>
+            </ul>
+            <div style="font-size:13px;font-weight:800;margin:0 0 10px;">3) 배포 후 노션에는 아래 4개 주소를 임베드하세요.</div>
+
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+              <button id="btnCopyEmbeds" style="border:0;border-radius:12px;padding:10px 12px;font-size:13px;font-weight:900;background:#111;color:#fff;cursor:pointer;">4개 임베드 주소 복사</button>
+              <button id="btnReload" style="border:0;border-radius:12px;padding:10px 12px;font-size:13px;font-weight:900;background:rgba(0,0,0,.2);color:#111;cursor:pointer;">다시 불러오기</button>
+            </div>
+            <pre id="embedList" style="margin:10px 0 0;font-size:12px;line-height:1.4;white-space:pre-wrap;word-break:break-all;background:transparent;border:0;color:rgba(0,0,0,.7);">${urls}</pre>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function mountSetup(pageTitle){
+    document.body.innerHTML = setupHtml(pageTitle);
+    const btnCopy = document.getElementById("btnCopyEmbeds");
+    const btnReload = document.getElementById("btnReload");
+    const text = document.getElementById("embedList")?.textContent || "";
+
+    if(btnCopy){
+      btnCopy.addEventListener("click", async () => {
+        try{
+          await navigator.clipboard.writeText(text.trim());
+          btnCopy.textContent = "복사됨!";
+          setTimeout(()=>btnCopy.textContent="4개 임베드 주소 복사", 900);
+        }catch(e){
+          // 클립보드 실패 시 그냥 선택이라도 쉽게
+          alert("복사가 안되면 아래 주소를 드래그해서 복사해줘.");
+        }
+      });
+    }
+    if(btnReload){
+      btnReload.addEventListener("click", () => location.reload());
+    }
+  }
+
   async function getData(){
     const res = await fetch(API_URL, { cache:"no-store" });
     const data = await res.json();
-    if(data?.error) throw new Error(data.error);
+
+    // monthly API가 500일 때도 json을 주니까 여기서 Missing env 잡기
+    if(data?.error){
+      const need = data?.hint?.requiredEnv || ["NOTION_TOKEN","NOTION_DAILY_DB_ID","NOTION_TODO_DB_ID"];
+      const isMissing = String(data.error).includes("Missing NOTION_") || String(data.error).includes("Missing env");
+      if(isMissing){
+        const err = new Error("Missing env");
+        err.code = "MISSING_ENV";
+        err.need = need;
+        throw err;
+      }
+      throw new Error(data.error);
+    }
+
     return data;
   }
 
@@ -47,14 +122,13 @@
   }
 
   // =========================
-  // KPI 카드 렌더
+  // KPI 카드 렌더 (원래 기대하던 레이아웃)
   // =========================
   function renderKpi(kpi, data){
-    if(!$("kpiMonth")) return; // KPI 페이지 아니면 스킵
+    if(!$("kpiMonth")) return;
 
     setText("kpiMonth", kpi.month ?? "-");
 
-    // ✅ ‘업무유형/성과유형’이 아니라 ‘최다 업무/최다 성과’
     const topWork = topLabel(data?.work?.labels || [], data?.work?.this || []);
     const topOutcome = topLabel(data?.outcome?.labels || [], data?.outcome?.this || []);
     setText("kpiTopWork", `최다 업무: ${topWork}`);
@@ -73,6 +147,8 @@
     setText("kpiPlannedDone", kpi.plannedDone ?? 0);
     setText("kpiPlannedPending", kpi.plannedPending ?? 0);
     setText("kpiUnplanned", kpi.unplanned ?? 0);
+
+    // ✅ % 두 번 곱하는 실수 방지: API의 planRate(정수 %) 그대로 표시
     setText("kpiPlanRate", kpi.planRate ?? 0);
 
     const done = Number(kpi.plannedDone ?? 0);
@@ -84,82 +160,7 @@
   }
 
   // =========================
-  // 이번달 가로막대 (this-month)
-  // =========================
-  function renderThisMonthBars(containerId, labels, values, fillColor){
-    const root = $(containerId);
-    if(!root) return;
-
-    root.innerHTML = "";
-
-    const vals = (values || []).map(Number);
-    const max = Math.max(1, ...vals);
-
-    const wrap = document.createElement("div");
-    wrap.style.display = "flex";
-    wrap.style.flexDirection = "column";
-    wrap.style.gap = "10px";
-
-    labels.forEach((name, i) => {
-      const v = Number(vals[i] || 0);
-      const pct = Math.max(0, Math.min(100, (v / max) * 100));
-
-      const row = document.createElement("div");
-      row.style.display = "grid";
-      row.style.gridTemplateColumns = "140px 1fr";
-      row.style.gap = "10px";
-      row.style.alignItems = "center";
-
-      const label = document.createElement("div");
-      label.style.fontSize = "12px";
-      label.style.fontWeight = "900";
-      label.style.color = "rgba(0,0,0,.85)";
-      label.style.whiteSpace = "nowrap";
-      label.style.overflow = "hidden";
-      label.style.textOverflow = "ellipsis";
-      label.title = name;
-      label.textContent = name;
-
-      const track = document.createElement("div");
-      track.style.height = "16px";
-      track.style.borderRadius = "8px";
-      track.style.background = "rgba(0,0,0,0.06)";
-      track.style.position = "relative";
-      track.style.overflow = "hidden";
-
-      const fill = document.createElement("div");
-      fill.style.height = "100%";
-      fill.style.width = pct.toFixed(2) + "%";
-      fill.style.background = (v === 0 ? COLOR_ZERO : fillColor);
-      fill.style.borderRadius = "8px";
-      fill.style.position = "relative";
-      fill.style.minWidth = v === 0 ? "10px" : "0px";
-
-      // ✅ 값 레이블: 흰색, 막대 시작점
-      const val = document.createElement("div");
-      val.textContent = String(v);
-      val.style.position = "absolute";
-      val.style.left = "10px";
-      val.style.top = "50%";
-      val.style.transform = "translateY(-50%)";
-      val.style.fontSize = "11px";
-      val.style.fontWeight = "900";
-      val.style.color = (v === 0 ? "rgba(0,0,0,.55)" : "rgba(255,255,255,0.95)");
-      val.style.pointerEvents = "none";
-      fill.appendChild(val);
-
-      track.appendChild(fill);
-
-      row.appendChild(label);
-      row.appendChild(track);
-      wrap.appendChild(row);
-    });
-
-    root.appendChild(wrap);
-  }
-
-  // =========================
-  // 전월대비 세로막대 (month-compare)
+  // 전월대비 세로막대 (month-compare) — 원래 기대하던 그래프
   // =========================
   function renderMonthCompareVertical(containerId, labels, lastArr, thisArr, thisColor) {
     const el = $(containerId);
@@ -183,7 +184,7 @@
     const wrap = document.createElement("div");
     wrap.style.display = "inline-flex";
     wrap.style.width = "fit-content";
-    wrap.style.gap = "4px";               // ✅ 유형별(카테고리) 간격 최소화
+    wrap.style.gap = "4px";
     wrap.style.alignItems = "flex-end";
     wrap.style.justifyContent = "flex-start";
     wrap.style.flexWrap = "nowrap";
@@ -327,15 +328,10 @@
   try{
     const data = await getData();
 
+    // KPI
     if(data?.kpi) renderKpi(data.kpi, data);
 
-    if($("chartWorkThis") && data?.work){
-      renderThisMonthBars("chartWorkThis", data.work.labels || [], data.work.this || [], COLOR_WORK);
-    }
-    if($("chartOutcomeThis") && data?.outcome){
-      renderThisMonthBars("chartOutcomeThis", data.outcome.labels || [], data.outcome.this || [], COLOR_OUTCOME);
-    }
-
+    // month-compare
     if($("chartWorkDelta") && data?.work){
       renderMonthCompareVertical("chartWorkDelta", data.work.labels || [], data.work.last || [], data.work.this || [], COLOR_WORK);
     }
@@ -344,6 +340,16 @@
     }
 
   } catch(e){
+    if(e?.code === "MISSING_ENV"){
+      // 페이지별 타이틀
+      const t =
+        $("kpiMonth") ? "Monthly KPI" :
+        ($("chartWorkDelta") || $("chartOutcomeDelta")) ? "Month Compare" :
+        "Setup";
+      mountSetup(t);
+      return;
+    }
+
     const msg = String(e?.message || e);
 
     if($("kpiMonth")){
@@ -354,7 +360,7 @@
       setText("kpiDoneRule", msg);
     }
 
-    ["chartWorkThis","chartOutcomeThis","chartWorkDelta","chartOutcomeDelta"].forEach(id=>{
+    ["chartWorkDelta","chartOutcomeDelta"].forEach(id=>{
       const el = $(id);
       if(el) el.innerHTML = `<div style="font-size:12px;font-weight:900;color:rgba(239,68,68,.9)">${msg}</div>`;
     });
