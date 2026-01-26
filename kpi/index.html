@@ -35,7 +35,7 @@
     /* Setup UI */
     .setupWrap{ max-width: 520px; margin: 16px auto; background: var(--callout); border-radius: 18px; padding: 14px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
     .setupTitle{ font-size:12px; font-weight:600; color: var(--muted); margin-bottom: 10px; }
-    .setupBodyTitle{ font-size:14px; font-weight:900; color: var(--danger); margin: 2px 0 10px 0; }
+    .setupBodyTitle{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:900;color:var(--danger);margin:2px 0 10px;line-height:1.15;}.warnIcon{font-size:16px;line-height:1;transform:translateY(-0.5px);}
     .setupBox{ background: rgba(255,255,255,0.55); border-radius: 14px; padding: 10px; font-size: 12px; color: #222; line-height: 1.35; }
     .setupStep{ margin: 8px 0; }
     .envList{ margin:8px 0 0 0; padding-left:16px; }
@@ -64,7 +64,7 @@
       app.innerHTML = `
         <div class="setupWrap">
           <div class="setupTitle">Monthly KPI</div>
-          <div class="setupBodyTitle">⚠️ 설정이 필요해요</div>
+          <div class="setupBodyTitle"><span class="warnIcon">⚠️</span><span>설정이 필요해요</span></div>
           <div class="setupBox">
             <div class="setupStep"><b>1)</b> Vercel 프로젝트에서 <b>환경변수</b>를 입력해야 위젯이 작동합니다.</div>
             <div class="setupStep"><b>2)</b> 필수 3개:</div>
