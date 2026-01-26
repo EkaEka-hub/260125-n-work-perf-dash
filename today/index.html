@@ -4,222 +4,62 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Today Summary</title>
+
+  <link rel="stylesheet" href="/assets/setup-card.css?v=20260126-1" />
+
   <style>
-    :root{
-      --callout: #fff7c9;
-      --calloutFlash: #ffef9a;
-      --text: #222;
-      --muted: #555;
-      --sub: #777;
-      --danger:#b42318;
-      --btn:#111;
-    }
-
+    :root{ --callout:#fff7c9; --calloutFlash:#ffef9a; --text:#222; --muted:#555; --sub:#777; }
     html, body{ height:100%; }
-    body{
-      margin:0;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-      background:#fff;
-      color: var(--text);
-    }
-
+    body{ margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; background:#fff; color: var(--text); }
     .wrap{
-      max-width: 400px;
-      margin: 0 auto;
-
-      background: var(--callout);
-      border-radius: 18px;
-      padding: 12px 12px;
-
-      box-shadow: 0 1px 2px rgba(0,0,0,0.04);
-      cursor: pointer;
-      user-select: none;
-      -webkit-tap-highlight-color: transparent;
-
-      transition: background 120ms ease, transform 80ms ease;
-      position: relative;
-
-      overflow: hidden;
+      max-width: 400px; margin: 0 auto; background: var(--callout);
+      border-radius: 18px; padding: 12px 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+      cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent;
+      transition: background 120ms ease, transform 80ms ease; position: relative; overflow: hidden;
     }
-
     .wrap:active{ transform: translateY(0.5px); }
     .wrap.flash{ background: var(--calloutFlash); }
-
     .title{
-      font-size:12px;
-      font-weight:600;
-      color: var(--muted);
-      margin: 0 0 10px 0;
-
-      display:flex;
-      justify-content: space-between;
-      gap: 8px;
-      align-items: baseline;
-
-      white-space: nowrap;
-      min-width: 0;
+      font-size:12px; font-weight:600; color: var(--muted); margin: 0 0 10px 0;
+      display:flex; justify-content:flex-start; gap:5px; align-items: baseline;
+      white-space: nowrap; min-width:0;
     }
-    .title .left{
-      min-width: 0;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-    .title .date{
-      white-space: nowrap;
-      flex: 0 0 auto;
-      font-variant-numeric: tabular-nums;
-    }
-
+    .title .left{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .title .date{ white-space:nowrap; flex:0 0 auto; font-variant-numeric: tabular-nums; }
     .panel{ background: transparent; }
-
-    .row{
-      display:grid;
-      grid-template-columns: 1fr auto;
-      column-gap: 12px;
-      align-items: center;
-      padding: 8px 2px;
-      min-width: 0;
-    }
+    .row{ display:grid; grid-template-columns: 1fr auto; column-gap: 12px; align-items: center; padding: 8px 2px; min-width: 0; }
     .row + .row{ margin-top: 2px; }
-
-    .labelLine{
-      display:flex;
-      align-items: baseline;
-      gap: 6px;
-      min-width: 0;
-    }
-
-    .label{
-      font-size:15px;
-      font-weight:750;
-      line-height: 1.2;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      min-width: 0;
-    }
-
-    .holdInline{
-      font-size:11px;
-      color: var(--sub);
-      font-weight:400;
-      white-space: nowrap;
-      flex: 0 0 auto;
-    }
-
-    .sub{
-      margin-top:4px;
-      font-size:11px;
-      color: var(--sub);
-      line-height:1.2;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .value{
-      font-size:24px;
-      font-weight:850;
-      line-height:1;
-      white-space: nowrap;
-      text-align:right;
-      font-variant-numeric: tabular-nums;
-    }
-
-    @media (max-width: 280px){
-      .value{ font-size: 22px; }
-      .label{ font-size: 14px; }
-    }
-
+    .labelLine{ display:flex; align-items: baseline; gap: 6px; min-width: 0; }
+    .label{ font-size:15px; font-weight:750; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; }
+    .holdInline{ font-size:11px; color: var(--sub); font-weight:400; white-space:nowrap; flex:0 0 auto; }
+    .sub{ margin-top:4px; font-size:11px; color: var(--sub); line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .value{ font-size:24px; font-weight:850; line-height:1; white-space:nowrap; text-align:right; font-variant-numeric: tabular-nums; }
+    @media (max-width: 280px){ .value{ font-size:22px; } .label{ font-size:14px; } }
     .wrap.loading{ filter: saturate(1.05); }
-
-    /* ✅ Setup UI (판매용 안내) */
-    .setupBodyTitle{
-      display:flex;
-      align-items:center;
-      gap:8px;
-    
-      font-size:14px;
-      font-weight:900;
-      color: var(--danger);
-      margin: 2px 0 10px 0;
-      line-height: 1.15;
-    }
-    
-    .warnIcon{
-      font-size: 16px;
-      line-height: 1;
-      transform: translateY(-0.5px); /* 살짝 위로: baseline 흔들림 방지 */
-    }
-
-    .setupBox{
-      background: rgba(255,255,255,0.55);
-      border-radius: 14px;
-      padding: 10px;
-      font-size: 12px;
-      color: #222;
-      line-height: 1.35;
-    }
-    .setupStep{ margin: 8px 0; }
-    .envList{ margin:8px 0 0 0; padding-left:16px; }
-    .pill{
-      display:inline-block;
-      border: 1px solid rgba(0,0,0,0.15);
-      border-radius: 999px;
-      padding: 2px 8px;
-      margin-right: 6px;
-      font-size: 11px;
-      background: rgba(255,255,255,0.7);
-    }
-    .btnRow{
-      display:flex;
-      gap: 8px;
-      margin-top: 10px;
-      flex-wrap: wrap;
-    }
-    .btn{
-      appearance:none;
-      border: none;
-      border-radius: 12px;
-      padding: 8px 10px;
-      font-size: 12px;
-      font-weight: 800;
-      background: var(--btn);
-      color: #fff;
-      cursor: pointer;
-    }
-    .btn.secondary{
-      background: rgba(0,0,0,0.25);
-      color: #111;
-      border: 1px solid rgba(0,0,0,0.2);
-    }
   </style>
 </head>
 <body>
-  <div class="wrap" id="wrap" aria-label="Click to refresh">
-    <div class="title" id="titleRow">
-      <span class="left" id="titleLeft">Today Summary ·</span>
+  <div id="setupRoot"></div>
+
+  <div class="wrap" id="wrap" aria-label="Click to refresh" data-app-section>
+    <div class="title">
+      <span class="left">Today Summary ·</span>
       <span class="date" id="date"></span>
     </div>
-
     <div class="panel" id="panel"></div>
   </div>
+
+  <script src="/assets/setup-card.js?v=20260126-1"></script>
 
   <script>
     const wrap = document.getElementById("wrap");
     const dateEl = document.getElementById("date");
-    const titleRow = document.getElementById("titleRow");
-    const titleLeft = document.getElementById("titleLeft");
 
     function toShortDate(iso){
       if (!iso || iso.length < 10 || iso[4] !== "-" || iso[7] !== "-") return iso || "-";
-      const yy = iso.slice(2,4);
-      const mm = iso.slice(5,7);
-      const dd = iso.slice(8,10);
+      const yy = iso.slice(2,4), mm = iso.slice(5,7), dd = iso.slice(8,10);
       return `${yy}/${mm}/${dd}`;
     }
-
     function setDateSmart(iso){
       const longText = iso || "-";
       const shortText = toShortDate(iso || "");
@@ -227,68 +67,17 @@
       dateEl.textContent = (w < 350) ? shortText : longText;
     }
 
-    function copy(text){
-      try{ navigator.clipboard.writeText(text); }catch(e){}
-    }
-
-    function renderSetup(need){
-      // ✅ Setup 화면에서는 날짜/점 표시 제거
-      titleLeft.textContent = "Today Summary";
-      dateEl.textContent = "";
-      dateEl.style.display = "none";
-
-      const req = Array.isArray(need) && need.length
-        ? need
-        : ["NOTION_TOKEN","NOTION_DAILY_DB_ID","NOTION_TODO_DB_ID"];
-
-      const routes = ["/today","/kpi","/this-month","/month-compare"]
-        .map(p => `${location.origin}${p}`).join("\n");
-
-      const panel = document.getElementById("panel");
-      panel.innerHTML = `
-        <div class="setupBodyTitle"><span class="warnIcon">⚠️</span><span>설정이 필요해요</span></div>
-        <div class="setupBox">
-          <div class="setupStep"><b>1)</b> Vercel 프로젝트에서 <b>환경변수</b>를 입력해야 위젯이 작동합니다.</div>
-          <div class="setupStep"><b>2)</b> 필수 3개:</div>
-          <ul class="envList">
-            ${req.map(k=>`<li><span class="pill">${k}</span></li>`).join("")}
-          </ul>
-          <div class="setupStep" style="margin-top:10px;">
-            <b>3)</b> 배포 후 노션에는 아래 <b>4개 주소</b>를 임베드하세요.
-          </div>
-          <div class="btnRow">
-            <button class="btn" id="copyRoutes">4개 임베드 주소 복사</button>
-            <button class="btn secondary" id="retry">다시 불러오기</button>
-          </div>
-        </div>
-      `;
-
-      document.getElementById("copyRoutes").onclick = () => copy(routes);
-      document.getElementById("retry").onclick = () => location.reload();
-    }
-
     function render(j){
       const iso = (j && j.date) ? j.date : "-";
-
-      // ✅ env 없으면 setup 카드
-      if (j?.error === "Missing env") {
-        renderSetup(j?.need);
-        return;
-      }
-
-      // 정상 모드에서는 날짜 다시 표시
-      dateEl.style.display = "";
-      titleLeft.textContent = "Today Summary ·";
+      window.__lastIsoDate = iso;
       setDateSmart(iso);
 
       const hold = (j?.holdCount ?? 0);
-
       const items = [
-        { label: "오늘 한 일", value: (j?.doneLogTotal ?? 0), sub: "업무일지(오늘)" },
-        { label: "To-do", value: (j?.plannedText ?? "-"), sub: "투두 완료/전체", holdInline: hold > 0 ? `보류: ${hold}건` : "" },
-        { label: "미완료", value: (j?.pendingToday ?? 0), sub: "투두 중 미기록" },
+        { label:"오늘 한 일", value:(j?.doneLogTotal ?? 0), sub:"업무일지(오늘)" },
+        { label:"To-do", value:(j?.plannedText ?? "-"), sub:"투두 완료/전체", holdInline: hold > 0 ? `보류: ${hold}건` : "" },
+        { label:"미완료", value:(j?.pendingToday ?? 0), sub:"투두 중 미기록" },
       ];
-
       const panel = document.getElementById("panel");
       panel.innerHTML = items.map(it => `
         <div class="row">
@@ -304,9 +93,26 @@
       `).join("");
     }
 
+    function showSetup(need){
+      document.querySelectorAll("[data-app-section]").forEach(el => el.style.display="none");
+      window.renderSetupCard({
+        mountId:"setupRoot",
+        title:"Today Summary",
+        requiredEnv: need || ["NOTION_TOKEN","NOTION_DAILY_DB_ID","NOTION_TODO_DB_ID"],
+      });
+    }
+
     async function fetchToday(){
       const r = await fetch("/api/today?t=" + Date.now(), { cache: "no-store" });
-      return await r.json();
+      const j = await r.json().catch(()=> ({}));
+
+      // env 없으면 setup 유지
+      if(!r.ok && (j?.error === "Missing env" || String(j?.error||"").includes("Missing"))){
+        showSetup(j?.need);
+        return null;
+      }
+      if(j?.error === "Missing env"){ showSetup(j?.need); return null; }
+      return j;
     }
 
     let busy = false;
@@ -318,13 +124,13 @@
 
         wrap.classList.add("loading");
         const j = await fetchToday();
-        render(j);
+        if(!j) return;
 
+        render(j);
         wrap.classList.add("flash");
         setTimeout(()=>wrap.classList.remove("flash"), 250);
 
       }catch(e){
-        // ignore
       }finally{
         wrap.classList.remove("loading");
         busy = false;
@@ -334,12 +140,6 @@
     window.addEventListener("resize", () => {
       if (window.__lastIsoDate) setDateSmart(window.__lastIsoDate);
     });
-
-    const _render = render;
-    render = function(j){
-      if (j && j.date) window.__lastIsoDate = j.date;
-      return _render(j);
-    };
 
     tick();
     setInterval(tick, 180000);
