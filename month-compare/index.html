@@ -2,381 +2,88 @@
 <html lang="ko">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Month Compare</title>
   <style>
     :root{
-      --bg:#fff;
-      --card:#fff;
-      --border:rgba(0,0,0,0.08);
-      --shadow:0 1px 2px rgba(0,0,0,0.05);
-
-      --text:#111;
-      --muted:#666;
-
-      --thisWork:#6b8cff;     /* 업무유형(이번달) */
-      --thisOutcome:#f59a3b;  /* 성과유형(이번달) */
-      --last:#cfcfcf;         /* 전월 */
-
-      --delta:#19a34a;        /* 증감 */
-      --danger:#d11a2a;
-
-      --callout:#fff7c9;
-      --calloutBox:#fffbe3;
+      --border: rgba(0,0,0,.08);
+      --shadow: 0 6px 18px rgba(0,0,0,.04);
+      --text: #111;
     }
-
-    html,body{height:100%;}
-    body{
+    *{ box-sizing:border-box; }
+    html, body{
       margin:0;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-      background:var(--bg);
+      padding:0;
+      background:#fff;
       color:var(--text);
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans KR", Arial, sans-serif;
+      overflow-x:hidden;
     }
-
-    .page{
-      max-width: 980px;
-      margin: 28px auto;
-      padding: 0 18px;
+    .wrap{
+      max-width:1100px;
+      width:100%;
+      margin:0 auto;
+      padding:14px 14px 18px;
+      container-type: inline-size;
+      container-name: embed;
     }
-
-    .topRow{
-      display:flex;
-      justify-content:space-between;
-      align-items:baseline;
-      gap:12px;
-      margin-bottom: 14px;
-    }
-
-    .h1{
-      font-size:20px;
-      font-weight:800;
-      letter-spacing:-0.2px;
-      margin:0;
-    }
-
-    .range{
-      font-size:12px;
-      color:var(--muted);
-      font-variant-numeric: tabular-nums;
-      white-space:nowrap;
-    }
-
-    .grid2{
+    .grid{
       display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
+      grid-template-columns: max-content max-content;
+      gap:14px;
+      align-items:start;
+      justify-content:start;
     }
-
-    @media (max-width: 860px){
-      .grid2{ grid-template-columns: 1fr; }
-    }
-
-    .card{
-      background:var(--card);
+    .panel{
       border:1px solid var(--border);
-      border-radius:16px;
+      border-radius:14px;
+      background:#fff;
       box-shadow: var(--shadow);
-      padding: 14px 14px 12px;
-    }
-
-    .cardTitle{
-      font-size:14px;
-      font-weight:800;
-      margin:0 0 12px 0;
-      letter-spacing:-0.1px;
-    }
-
-    /* ===== chart (세로 막대) ===== */
-    .chart{
-      display:flex;
-      gap: 14px;
-      align-items:flex-end;
-      height: 220px;
-      padding: 6px 4px 0;
+      padding:14px 14px 12px;
+      min-height:260px;
       overflow-x:auto;
       overflow-y:hidden;
-      -webkit-overflow-scrolling: touch;
+      max-width:100%;
     }
-
-    .col{
-      width: 90px;
-      min-width: 90px;
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      gap: 8px;
-      position:relative;
-    }
-
-    .delta{
-      position:absolute;
-      top: -2px;
-      font-size:12px;
-      font-weight:800;
-      color: var(--delta);
-      display:flex;
-      align-items:center;
-      gap:4px;
-      white-space:nowrap;
-      transform: translateY(-100%);
-    }
-
-    .delta .tri{
-      font-size:12px;
-      line-height:1;
-    }
-
-    .bars{
-      width: 100%;
-      height: 170px;
-      display:flex;
-      align-items:flex-end;
-      justify-content:center;
-      gap: 8px;
-    }
-
-    .bar{
-      width: 34px;
-      border-radius: 10px;
-      display:flex;
-      align-items:flex-start;
-      justify-content:center;
-      padding-top: 6px;
-      box-sizing:border-box;
-      position:relative;
-    }
-
-    .bar.last{
-      width: 22px;
-      background: var(--last);
-      color:#222;
-      border-radius: 10px;
-    }
-
-    .bar.this.work{
-      background: var(--thisWork);
-      color:#111;
-    }
-
-    .bar.this.outcome{
-      background: var(--thisOutcome);
-      color:#111;
-    }
-
-    .num{
-      font-size:12px;
+    .panel h3{
+      margin:0 0 10px;
+      font-size:14px;
       font-weight:900;
-      background: rgba(255,255,255,0.65);
-      border-radius: 8px;
-      padding: 2px 6px;
-      line-height:1.1;
-      font-variant-numeric: tabular-nums;
-    }
-
-    .label{
-      font-size:12px;
-      color: var(--text);
-      text-align:center;
-      font-weight:700;
-      letter-spacing:-0.1px;
+      letter-spacing:-0.2px;
       white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
-      max-width: 100%;
     }
-
-    .foot{
-      margin-top: 10px;
-      font-size:11px;
-      color: var(--muted);
-    }
-
-    /* ===== setup card (env 없을 때) ===== */
-    .setupWrap{
-      max-width: 520px;
-      margin: 38px auto;
-      background: var(--callout);
-      border-radius: 18px;
-      padding: 14px;
-      box-shadow: var(--shadow);
-    }
-    .setupInner{
-      background: var(--calloutBox);
-      border-radius: 14px;
-      padding: 14px;
-      margin-top: 10px;
-    }
-    .setupTitle{
-      font-size:13px;
-      font-weight:800;
-      color: #333;
-      margin:0;
-    }
-    .setupBodyTitle{
-      display:flex;align-items:center;gap:8px;
-      font-size:14px;font-weight:900;color:var(--danger);
-      margin:6px 0 10px;line-height:1.15;
-    }
-    .warnIcon{font-size:16px;line-height:1;transform:translateY(-0.5px);}
-    .setupText{
-      font-size:12px;
-      color:#222;
-      line-height:1.6;
-      margin: 0 0 10px 0;
-    }
-    .pill{
+    .chart{
       display:inline-block;
-      padding: 2px 8px;
-      border-radius: 999px;
-      border: 1px solid rgba(0,0,0,0.15);
-      background: rgba(255,255,255,0.65);
-      font-weight:800;
-      font-size:11px;
-      margin-left: 6px;
+      width:fit-content;
+      max-width:none;
+      min-width:0;
     }
-    .btnRow{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;}
-    .btn{
-      border:0;
-      border-radius: 12px;
-      padding: 10px 12px;
-      font-weight:900;
-      cursor:pointer;
+    @container embed (max-width: 980px){
+      .grid{ grid-template-columns: 1fr; }
+      .panel{ width:100%; }
+      .chart{ width:fit-content; }
     }
-    .btn.primary{background:#111;color:#fff;}
-    .btn.gray{background:#d6d6d6;color:#111;}
+    @container embed (max-width: 520px){
+      .panel{ padding:12px 12px 10px; }
+    }
   </style>
 </head>
 <body>
-  <div class="page" id="page" style="display:none;">
-    <div class="topRow">
-      <h1 class="h1">전월 대비</h1>
-      <div class="range" id="range"></div>
-    </div>
-
-    <div class="grid2">
-      <div class="card">
-        <div class="cardTitle">전월 대비 · 업무유형</div>
-        <div class="chart" id="chartWork"></div>
+  <div class="wrap">
+    <div class="grid">
+      <div class="panel">
+        <h3>전월 대비 · 업무유형</h3>
+        <div id="chartWorkDelta" class="chart"></div>
       </div>
 
-      <div class="card">
-        <div class="cardTitle">전월 대비 · 성과유형</div>
-        <div class="chart" id="chartOutcome"></div>
-      </div>
-    </div>
-
-    <div class="foot">막대(회색)=전월, 막대(컬러)=이번달 · ▲ 숫자=(이번달-전월) 증감</div>
-  </div>
-
-  <!-- env 없을 때 안내 -->
-  <div class="setupWrap" id="setup" style="display:none;">
-    <div style="display:flex;justify-content:space-between;gap:10px;align-items:baseline;">
-      <div class="setupTitle">Month Compare</div>
-    </div>
-    <div class="setupBodyTitle"><span class="warnIcon">⚠️</span><span>설정이 필요해요</span></div>
-    <div class="setupInner">
-      <div class="setupText">
-        1) Vercel 프로젝트에서 환경변수를 입력해야 위젯이 작동합니다.<br/>
-        2) 필수 3개:
-        <ul style="margin:6px 0 0 18px;padding:0;">
-          <li><span class="pill">NOTION_TOKEN</span></li>
-          <li><span class="pill">NOTION_DAILY_DB_ID</span></li>
-          <li><span class="pill">NOTION_TODO_DB_ID</span></li>
-        </ul>
-        3) 배포 후 노션에는 아래 4개 주소를 임베드하세요.
-      </div>
-      <div class="btnRow">
-        <button class="btn primary" id="copyBtn">4개 임베드 주소 복사</button>
-        <button class="btn gray" id="reloadBtn">다시 불러오기</button>
+      <div class="panel">
+        <h3>전월 대비 · 성과유형</h3>
+        <div id="chartOutcomeDelta" class="chart"></div>
       </div>
     </div>
   </div>
 
-  <script>
-    function qs(id){ return document.getElementById(id); }
-
-    function buildEmbedUrls(){
-      const base = location.origin;
-      return [
-        base + "/today",
-        base + "/kpi",
-        base + "/this-month",
-        base + "/month-compare",
-      ].join("\n");
-    }
-
-    qs("copyBtn").addEventListener("click", async () => {
-      try{
-        await navigator.clipboard.writeText(buildEmbedUrls());
-        qs("copyBtn").textContent = "복사 완료!";
-        setTimeout(()=>qs("copyBtn").textContent="4개 임베드 주소 복사", 900);
-      }catch(e){}
-    });
-    qs("reloadBtn").addEventListener("click", () => location.reload());
-
-    function safeNum(n){ return (typeof n === "number" && isFinite(n)) ? n : 0; }
-
-    function renderChart(el, labels, lastArr, thisArr, mode){
-      const maxVal = Math.max(1, ...lastArr.map(safeNum), ...thisArr.map(safeNum));
-      el.innerHTML = labels.map((lab, i) => {
-        const lastV = safeNum(lastArr[i]);
-        const thisV = safeNum(thisArr[i]);
-        const delta = thisV - lastV;
-
-        const lastH = Math.max(2, Math.round((lastV / maxVal) * 170));
-        const thisH = Math.max(2, Math.round((thisV / maxVal) * 170));
-
-        const deltaHtml = (delta !== 0)
-          ? `<div class="delta"><span class="tri">▲</span><span>${delta > 0 ? "+"+delta : delta}</span></div>`
-          : ``;
-
-        const thisClass = (mode === "work") ? "work" : "outcome";
-
-        return `
-          <div class="col" title="${lab}">
-            ${deltaHtml}
-            <div class="bars">
-              <div class="bar last" style="height:${lastH}px;"><span class="num">${lastV}</span></div>
-              <div class="bar this ${thisClass}" style="height:${thisH}px;"><span class="num">${thisV}</span></div>
-            </div>
-            <div class="label">${lab}</div>
-          </div>
-        `;
-      }).join("");
-    }
-
-    async function fetchMonthly(){
-      const r = await fetch("/api/monthly?t=" + Date.now(), { cache:"no-store" });
-      return await r.json();
-    }
-
-    async function main(){
-      const j = await fetchMonthly();
-
-      // env 없을 때
-      if (j?.error === "Missing env" || j?.need){
-        qs("setup").style.display = "block";
-        return;
-      }
-
-      // 상단 기간 표시(있으면 표시)
-      const lastMonth = j?.meta?.lastMonth || j?.meta?.last_month || j?.meta?.prevMonth || "-";
-      const month = j?.meta?.month || j?.meta?.thisMonth || "-";
-      qs("range").textContent = (lastMonth !== "-" && month !== "-") ? `${lastMonth} → ${month}` : "";
-
-      // 기대 데이터 구조: j.work / j.outcome (labels, last, this)
-      const w = j?.work || {};
-      const o = j?.outcome || {};
-
-      renderChart(qs("chartWork"), (w.labels||[]), (w.last||[]), (w.this||[]), "work");
-      renderChart(qs("chartOutcome"), (o.labels||[]), (o.last||[]), (o.this||[]), "outcome");
-
-      qs("page").style.display = "block";
-    }
-
-    main().catch(() => {
-      qs("setup").style.display = "block";
-    });
-  </script>
+  <!-- ✅ 캐시 방지: kpi와 동일하게 버전 파라미터 -->
+  <script src="/assets/app.js?v=20260121-1"></script>
 </body>
 </html>
