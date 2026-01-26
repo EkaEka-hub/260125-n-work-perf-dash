@@ -32,6 +32,15 @@
     return { t: "", c: "rgba(0,0,0,.45)" };
   }
 
+  // ✅ rgba(...,a) -> rgba(...,1) 로 바꿔서 pill이 막대보다 “진하게” 보이게
+  function solidRGBA(color){
+    const s = String(color || "");
+    const m = s.match(/^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)(?:\s*,\s*([0-9.]+))?\s*\)$/i);
+    if(!m) return s;
+    const r = m[1], g = m[2], b = m[3];
+    return `rgba(${r},${g},${b},1)`;
+  }
+
   const COLOR_WORK = "rgba(59,130,246,0.78)";
   const COLOR_OUTCOME = "rgba(249,115,22,0.78)";
   const COLOR_ZERO = "rgba(0,0,0,0.18)";
@@ -104,7 +113,7 @@
   }
 
   // =========================
-  // this-month 가로 막대 (너가 원하던 스타일)
+  // this-month 가로 막대 (✅ 값 pill을 “막대색 + 흰글씨”로)
   // =========================
   function renderThisMonthBars(containerId, labels, values, fillColor){
     const root = $(containerId);
@@ -118,6 +127,8 @@
     wrap.style.display = "flex";
     wrap.style.flexDirection = "column";
     wrap.style.gap = "10px";
+
+    const pillBg = solidRGBA(fillColor); // ✅ 더 진한(불투명) 컬러로 pill 강조
 
     labels.forEach((name, i) => {
       const v = vals[i] || 0;
@@ -154,7 +165,7 @@
       fill.style.position = "relative";
       fill.style.minWidth = v === 0 ? "0px" : "18px";
 
-      // ✅ 숫자 “pill” (원래 너가 원하던 느낌)
+      // ✅ 정답 이미지처럼: “색 pill + 흰 글씨”
       const pill = document.createElement("div");
       pill.textContent = String(v);
       pill.style.position = "absolute";
@@ -166,16 +177,17 @@
       pill.style.lineHeight = "1";
       pill.style.padding = "3px 7px";
       pill.style.borderRadius = "999px";
-      pill.style.background = "rgba(255,255,255,0.85)";
-      pill.style.color = "rgba(0,0,0,.75)";
       pill.style.pointerEvents = "none";
 
-      // 0이면 fill이 없으니 track에 붙여서 보이게
       if(v === 0){
-        pill.style.background = "rgba(0,0,0,0.08)";
+        // 0은 회색 pill
+        pill.style.background = "rgba(0,0,0,0.12)";
         pill.style.color = "rgba(0,0,0,.55)";
         track.appendChild(pill);
       }else{
+        // ✅ 막대색 pill (불투명) + 흰 글씨
+        pill.style.background = pillBg;
+        pill.style.color = "rgba(255,255,255,0.95)";
         fill.appendChild(pill);
         track.appendChild(fill);
       }
@@ -189,7 +201,7 @@
   }
 
   // =========================
-  // month-compare 세로 막대 (원래 기대 그래프)
+  // month-compare 세로 막대
   // =========================
   function renderMonthCompareVertical(containerId, labels, lastArr, thisArr, thisColor) {
     const el = $(containerId);
