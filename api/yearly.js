@@ -66,7 +66,7 @@ async function queryAll(databaseId, queryBody){
   return results;
 }
 
-// ✅ 날짜 range(겹침) 방지: start 날짜 기준으로 강제 필터
+// ✅ Notion date start를 YYYY-MM-DD로 뽑아오기
 function getDateStart(page, propName){
   const p = page?.properties?.[propName];
   if(!p || p.type !== "date") return "";
@@ -74,6 +74,7 @@ function getDateStart(page, propName){
   return start ? String(start).slice(0,10) : "";
 }
 
+// ✅ “겹침/이상치” 방지: startDate 기준으로 월 범위에 엄격히 포함되는 것만 카운트
 function filterByStartDateStrict(pages, propName, startInclusive, endExclusive){
   const kept = [];
   for(const pg of pages){
@@ -84,8 +85,22 @@ function filterByStartDateStrict(pages, propName, startInclusive, endExclusive){
   return kept;
 }
 
+function pickMaxIndexAmong(totals, idxs){
+  let best = idxs[0];
+  for(const i of idxs){
+    if(totals[i] > totals[best]) best = i;
+  }
+  return best;
+}
+function pickMinIndexAmong(totals, idxs){
+  let best = idxs[0];
+  for(const i of idxs){
+    if(totals[i] < totals[best]) best = i;
+  }
+  return best;
+}
+
 export default async function handler(req,res){
-  // iframe/노션 임베드 대비
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET,OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
@@ -102,7 +117,6 @@ export default async function handler(req,res){
 
     const months = Array.from({length:12}, (_,i)=>`${year}-${pad2(i+1)}`);
 
-    // 12개월 월별 총 업무 수
     const totals = [];
     for(let m=1; m<=12; m++){
       const { startDate, endDate } = monthRangeYMD(year, m);
@@ -117,13 +131,24 @@ export default async function handler(req,res){
     }
 
     const yearlyTotalWork = totals.reduce((a,b)=>a+b,0);
-    const monthlyAvg = totals.length ? Math.round((yearlyTotalWork / 12) * 10) / 10 : 0;
 
-    // max/min 월
-    let maxIdx = 0, minIdx = 0;
-    for(let i=1;i<totals.length;i++){
-      if(totals[i] > totals[maxIdx]) maxIdx = i;
-      if(totals[i] < totals[minIdx]) minIdx = i;
+    // ✅ 데이터가 있는 달(>0)만 평균/최소/최대로 잡기
+    const nonZeroIdx = [];
+    for(let i=0;i<totals.length;i++){
+      if(totals[i] > 0) nonZeroIdx.push(i);
+    }
+
+    const denom = nonZeroIdx.length; // 데이터 있는 달 수
+    const monthlyAvg = denom === 0 ? 0 : Math.round((yearlyTotalWork / denom) * 10) / 10;
+
+    let maxIdx, minIdx;
+    if(denom === 0){
+      // 1년 내내 0이면 그냥 1월로 처리(표시용)
+      maxIdx = 0;
+      minIdx = 0;
+    }else{
+      maxIdx = pickMaxIndexAmong(totals, nonZeroIdx);
+      minIdx = pickMinIndexAmong(totals, nonZeroIdx);
     }
 
     return res.status(200).json({
@@ -133,6 +158,7 @@ export default async function handler(req,res){
       kpi:{
         yearlyTotalWork,
         monthlyAvg,
+        dataMonthsCount: denom, // ✅ 몇 달 기준인지 UI에서도 표시 가능
         max:{ month: months[maxIdx], value: totals[maxIdx] },
         min:{ month: months[minIdx], value: totals[minIdx] },
       },
