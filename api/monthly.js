@@ -18,26 +18,33 @@ const API_BASE = "https://api.notion.com/v1";
 
 function pad2(n){ return String(n).padStart(2,"0"); }
 
+// ✅ (수정) KST 기준 "YYYY-MM"을 Intl로 안전하게 생성
 function currentMonthSeoul(){
-  const now = new Date();
-  const seoul = new Date(now.getTime() + 9*60*60*1000);
-  const y = seoul.getUTCFullYear();
-  const m = seoul.getUTCMonth() + 1;
-  return `${y}-${pad2(m)}`;
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Seoul",
+    year: "numeric",
+    month: "2-digit",
+  }).formatToParts(new Date());
+
+  const y = parts.find(p=>p.type==="year")?.value;
+  const m = parts.find(p=>p.type==="month")?.value;
+  return `${y}-${m}`;
 }
 
-function monthRangeSeoul(yyyyMm){
+// ✅ (핵심 수정) Notion date 필터는 시간/타임존 없이 "YYYY-MM-DD"로 경계 지정
+function monthRangeDateOnly(yyyyMm){
   const [yStr,mStr] = String(yyyyMm).split("-");
   const y = Number(yStr);
   const m = Number(mStr);
   if(!y || !m) throw new Error("Invalid month format. Use YYYY-MM.");
 
-  const startISO = `${y}-${pad2(m)}-01T00:00:00+09:00`;
+  const startDate = `${y}-${pad2(m)}-01`;
 
   let ny=y, nm=m+1;
   if(nm===13){ ny=y+1; nm=1; }
-  const endISO = `${ny}-${pad2(nm)}-01T00:00:00+09:00`;
-  return { startISO, endISO, y, m };
+  const endDate = `${ny}-${pad2(nm)}-01`;
+
+  return { startDate, endDate, y, m };
 }
 
 function prevMonth(yyyyMm){
@@ -99,25 +106,18 @@ async function getSelectOptionsInOrder(databaseId, propName){
   if(prop.type === "multi_select"){
     return (prop.multi_select?.options || []).map(o=>o.name);
   }
-  // ✅ Notion Status 타입도 옵션 순서를 제공
   if(prop.type === "status"){
     return (prop.status?.options || []).map(o=>o.name);
   }
   return [];
 }
 
-/**
- * ✅ 핵심 수정:
- * select / multi_select 뿐 아니라 status 타입도 읽기
- */
 function pickSelectName(page, propName){
   const p = page?.properties?.[propName];
   if(!p) return null;
 
   if(p.type === "select") return p.select?.name || null;
   if(p.type === "multi_select") return p.multi_select?.[0]?.name || null;
-
-  // ✅ Notion Status property
   if(p.type === "status") return p.status?.name || null;
 
   return null;
@@ -157,7 +157,6 @@ function mapToArray(map, labels){
 }
 
 export default async function handler(req,res){
-  // ✅ CORS: Notion 임베드(iframe)에서도 호출 가능하게
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET,OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
@@ -170,24 +169,24 @@ export default async function handler(req,res){
     const month = (req.query?.month || currentMonthSeoul()).toString();
     const lastMonth = prevMonth(month);
 
-    const thisRange = monthRangeSeoul(month);
-    const lastRange = monthRangeSeoul(lastMonth);
+    // ✅ 날짜만 경계
+    const thisRange = monthRangeDateOnly(month);
+    const lastRange = monthRangeDateOnly(lastMonth);
 
-    // 라벨 순서(노션 등록 순서)
     const workLabels = await getSelectOptionsInOrder(NOTION_DAILY_DB_ID, DAILY_WORK_PROP);
     const outLabels  = await getSelectOptionsInOrder(NOTION_DAILY_DB_ID, DAILY_OUTCOME_PROP);
 
     const safeWorkLabels = workLabels.length ? workLabels : [];
     const safeOutLabels  = outLabels.length  ? outLabels  : [];
 
-    // 일일업무기록 집계
+    // ✅ (핵심) date filter에 시간 없는 YYYY-MM-DD만 사용
     const dailyThisPages = await queryAll(NOTION_DAILY_DB_ID,{
-      filter:{ property: DAILY_DATE_PROP, date:{ on_or_after:thisRange.startISO, before:thisRange.endISO } },
+      filter:{ property: DAILY_DATE_PROP, date:{ on_or_after:thisRange.startDate, before:thisRange.endDate } },
       page_size:100,
     });
 
     const dailyLastPages = await queryAll(NOTION_DAILY_DB_ID,{
-      filter:{ property: DAILY_DATE_PROP, date:{ on_or_after:lastRange.startISO, before:lastRange.endISO } },
+      filter:{ property: DAILY_DATE_PROP, date:{ on_or_after:lastRange.startDate, before:lastRange.endDate } },
       page_size:100,
     });
 
@@ -206,15 +205,15 @@ export default async function handler(req,res){
     const outThisArr  = mapToArray(outThisMap,  outLabelsFinal);
     const outLastArr  = mapToArray(outLastMap,  outLabelsFinal);
 
-    // 투두(이번달 마감일)
+    // ✅ 투두(이번달 마감일)도 동일하게 날짜만 경계
     const todoThisPages = await queryAll(NOTION_TODO_DB_ID,{
-      filter:{ property: TODO_DUE_PROP, date:{ on_or_after:thisRange.startISO, before:thisRange.endISO } },
+      filter:{ property: TODO_DUE_PROP, date:{ on_or_after:thisRange.startDate, before:thisRange.endDate } },
       page_size:100,
     });
 
     const statusCount = Object.fromEntries(TODO_STATUSES_ALL.map(s=>[s,0]));
     for(const p of todoThisPages){
-      const st = pickSelectName(p, TODO_STATUS_PROP); // ✅ status 타입도 이제 잡힘
+      const st = pickSelectName(p, TODO_STATUS_PROP);
       if(!st) continue;
       if(statusCount[st] === undefined) statusCount[st] = 0;
       statusCount[st] += 1;
@@ -255,6 +254,10 @@ export default async function handler(req,res){
         month,
         lastMonth,
         tz:"Asia/Seoul(+09:00)",
+        range:{
+          this: { startDate: thisRange.startDate, endDate: thisRange.endDate },
+          last: { startDate: lastRange.startDate, endDate: lastRange.endDate },
+        },
         prop:{
           daily:{ date: DAILY_DATE_PROP, work: DAILY_WORK_PROP, outcome: DAILY_OUTCOME_PROP },
           todo:{ due: TODO_DUE_PROP, status: TODO_STATUS_PROP },
