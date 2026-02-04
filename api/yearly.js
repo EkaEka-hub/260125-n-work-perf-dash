@@ -8,10 +8,17 @@ const API_BASE = "https://api.notion.com/v1";
 
 function pad2(n){ return String(n).padStart(2,"0"); }
 
-function currentYearSeoul(){
+function seoulNow(){
   const now = new Date();
-  const seoul = new Date(now.getTime() + 9*60*60*1000);
-  return seoul.getUTCFullYear();
+  return new Date(now.getTime() + 9*60*60*1000);
+}
+
+function currentYearSeoul(){
+  return seoulNow().getUTCFullYear();
+}
+
+function currentMonthSeoul(){ // 1~12
+  return seoulNow().getUTCMonth() + 1;
 }
 
 function monthRangeYMD(year, month){
@@ -66,7 +73,7 @@ async function queryAll(databaseId, queryBody){
   return results;
 }
 
-// ✅ Notion date start를 YYYY-MM-DD로 뽑아오기
+// ✅ Notion date start를 YYYY-MM-DD로 뽑기
 function getDateStart(page, propName){
   const p = page?.properties?.[propName];
   if(!p || p.type !== "date") return "";
@@ -74,7 +81,7 @@ function getDateStart(page, propName){
   return start ? String(start).slice(0,10) : "";
 }
 
-// ✅ “겹침/이상치” 방지: startDate 기준으로 월 범위에 엄격히 포함되는 것만 카운트
+// ✅ 월 범위에 “엄격히” 포함되는 start만 카운트(겹침/이상치 방지)
 function filterByStartDateStrict(pages, propName, startInclusive, endExclusive){
   const kept = [];
   for(const pg of pages){
@@ -85,17 +92,50 @@ function filterByStartDateStrict(pages, propName, startInclusive, endExclusive){
   return kept;
 }
 
-function pickMaxIndexAmong(totals, idxs){
-  let best = idxs[0];
-  for(const i of idxs){
-    if(totals[i] > totals[best]) best = i;
+// ✅ 그 해의 “첫 기록(가장 이른 날짜)”을 1개만 가져와서 startMonth를 구함
+async function findFirstRecordMonthInYear(dbId, year){
+  const startYear = `${year}-01-01`;
+  const nextYear = `${year+1}-01-01`;
+
+  const data = await notionFetch(`/databases/${dbId}/query`, "POST", {
+    filter: {
+      property: DAILY_DATE_PROP,
+      date: { on_or_after: startYear, before: nextYear },
+    },
+    sorts: [{ property: DAILY_DATE_PROP, direction: "ascending" }],
+    page_size: 1,
+  });
+
+  const first = (data.results || [])[0];
+  if(!first) return null;
+
+  const iso = getDateStart(first, DAILY_DATE_PROP); // YYYY-MM-DD
+  if(!iso || iso.slice(0,4) !== String(year)) return null;
+
+  const m = Number(iso.slice(5,7)); // 1~12
+  return (m >= 1 && m <= 12) ? m : null;
+}
+
+function sum(arr, fromIdx, toIdxInclusive){
+  let s = 0;
+  for(let i=fromIdx;i<=toIdxInclusive;i++){
+    s += Number(arr[i] || 0);
+  }
+  return s;
+}
+
+function pickMaxIndexInRange(totals, fromIdx, toIdx){
+  let best = fromIdx;
+  for(let i=fromIdx;i<=toIdx;i++){
+    if(Number(totals[i]||0) > Number(totals[best]||0)) best = i;
   }
   return best;
 }
-function pickMinIndexAmong(totals, idxs){
-  let best = idxs[0];
-  for(const i of idxs){
-    if(totals[i] < totals[best]) best = i;
+
+function pickMinIndexInRange(totals, fromIdx, toIdx){
+  let best = fromIdx;
+  for(let i=fromIdx;i<=toIdx;i++){
+    if(Number(totals[i]||0) < Number(totals[best]||0)) best = i;
   }
   return best;
 }
@@ -115,8 +155,13 @@ export default async function handler(req,res){
     const year = Number(req.query?.year || currentYearSeoul());
     if(!year || year < 1970 || year > 2100) throw new Error("Invalid year");
 
+    const nowY = currentYearSeoul();
+    const nowM = currentMonthSeoul(); // 1~12
+
+    // ✅ 12개월 라벨/배열은 항상 고정(0 포함 표시를 위해)
     const months = Array.from({length:12}, (_,i)=>`${year}-${pad2(i+1)}`);
 
+    // 12개월 totals 집계
     const totals = [];
     for(let m=1; m<=12; m++){
       const { startDate, endDate } = monthRangeYMD(year, m);
@@ -130,42 +175,75 @@ export default async function handler(req,res){
       totals.push(strict.length);
     }
 
-    const yearlyTotalWork = totals.reduce((a,b)=>a+b,0);
+    // ✅ 연도별 “시작월(첫 기록월)” 찾기
+    const firstMonth = await findFirstRecordMonthInYear(NOTION_DAILY_DB_ID, year); // 1~12 or null
 
-    // ✅ 데이터가 있는 달(>0)만 평균/최소/최대로 잡기
-    const nonZeroIdx = [];
-    for(let i=0;i<totals.length;i++){
-      if(totals[i] > 0) nonZeroIdx.push(i);
+    // ✅ 종료월 결정
+    // - 과거 연도: 12월
+    // - 현재 연도: 현재월
+    // - 미래 연도: (활성구간 없음)
+    let endMonth;
+    if(year < nowY) endMonth = 12;
+    else if(year === nowY) endMonth = nowM;
+    else endMonth = null;
+
+    // ✅ 유효 구간(평균/최소/최대 계산용)
+    // startMonth는 firstMonth, endMonth는 위에서 결정
+    // 그래프는 12개월 그대로 두고, 계산만 여기 구간으로!
+    let activeStart = null; // 1~12
+    let activeEnd   = null; // 1~12
+    if(firstMonth && endMonth && endMonth >= firstMonth){
+      activeStart = firstMonth;
+      activeEnd = endMonth;
     }
 
-    const denom = nonZeroIdx.length; // 데이터 있는 달 수
-    const monthlyAvg = denom === 0 ? 0 : Math.round((yearlyTotalWork / denom) * 10) / 10;
+    // ✅ 유효 구간이 없으면(미래 연도 or 기록 없음) 평균/최소/최대는 0 처리
+    let monthlyAvg = 0;
+    let yearlyTotalWork = 0;
+    let maxIdx = 0;
+    let minIdx = 0;
+    let dataMonthsCount = 0;
 
-    let maxIdx, minIdx;
-    if(denom === 0){
-      // 1년 내내 0이면 그냥 1월로 처리(표시용)
+    if(activeStart && activeEnd){
+      const sIdx = activeStart - 1;
+      const eIdx = activeEnd - 1;
+
+      yearlyTotalWork = sum(totals, sIdx, eIdx);
+      dataMonthsCount = (eIdx - sIdx + 1);
+
+      monthlyAvg = dataMonthsCount === 0 ? 0 : Math.round((yearlyTotalWork / dataMonthsCount) * 10) / 10;
+
+      maxIdx = pickMaxIndexInRange(totals, sIdx, eIdx);
+      minIdx = pickMinIndexInRange(totals, sIdx, eIdx);
+    }else{
+      // 기록이 없거나 미래 연도면 연간총업무=0, 평균=0
+      yearlyTotalWork = 0;
+      monthlyAvg = 0;
+      dataMonthsCount = 0;
+
+      // 표시용(의미는 없음): 1월로 통일
       maxIdx = 0;
       minIdx = 0;
-    }else{
-      maxIdx = pickMaxIndexAmong(totals, nonZeroIdx);
-      minIdx = pickMinIndexAmong(totals, nonZeroIdx);
     }
 
     return res.status(200).json({
       year,
       months,
-      totals,
+      totals, // ✅ 12개월 고정(0 포함)
       kpi:{
-        yearlyTotalWork,
-        monthlyAvg,
-        dataMonthsCount: denom, // ✅ 몇 달 기준인지 UI에서도 표시 가능
+        yearlyTotalWork,      // ✅ 유효 구간 합
+        monthlyAvg,           // ✅ 유효 구간 개월 수로 나눈 평균
+        dataMonthsCount,      // ✅ 유효 구간 개월 수(=분모)
+        activeRange: activeStart && activeEnd ? {
+          startMonth: months[activeStart-1],
+          endMonth: months[activeEnd-1],
+        } : null,
         max:{ month: months[maxIdx], value: totals[maxIdx] },
         min:{ month: months[minIdx], value: totals[minIdx] },
       },
       meta:{
         tz:"Asia/Seoul(+09:00)",
         prop:{ daily:{ date: DAILY_DATE_PROP } },
-        env:{ NOTION_DAILY_DB_ID: NOTION_DAILY_DB_ID },
       }
     });
 
