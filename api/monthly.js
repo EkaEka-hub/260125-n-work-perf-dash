@@ -1,7 +1,5 @@
 // api/monthly.js
 
-const CODE_VER = "monthly-20260204-2"; // ✅ 버전 올림(배포 확인)
-
 const NOTION_TOKEN = process.env.NOTION_TOKEN;
 const NOTION_DAILY_DB_ID = process.env.NOTION_DAILY_DB_ID;
 const NOTION_TODO_DB_ID = process.env.NOTION_TODO_DB_ID;
@@ -21,7 +19,6 @@ const API_BASE = "https://api.notion.com/v1";
 
 function pad2(n){ return String(n).padStart(2,"0"); }
 
-// KST 기준 현재 월 (YYYY-MM)
 function currentMonthSeoul(){
   const now = new Date();
   const seoul = new Date(now.getTime() + 9*60*60*1000);
@@ -30,7 +27,6 @@ function currentMonthSeoul(){
   return `${y}-${pad2(m)}`;
 }
 
-// 월 범위를 "YYYY-MM-DD" 문자열로 반환
 function monthRangeYMD(yyyyMm){
   const [yStr,mStr] = String(yyyyMm).split("-");
   const y = Number(yStr);
@@ -86,7 +82,6 @@ async function queryAll(databaseId, queryBody){
   while(hasMore){
     const body = { ...queryBody };
     if(startCursor) body.start_cursor = startCursor;
-
     const data = await notionFetch(`/databases/${databaseId}/query`, "POST", body);
     results.push(...(data.results || []));
     hasMore = Boolean(data.has_more);
@@ -112,7 +107,6 @@ async function getSelectOptionsInOrder(databaseId, propName){
   return [];
 }
 
-// select / multi_select / status 타입 모두 대응
 function pickSelectName(page, propName){
   const p = page?.properties?.[propName];
   if(!p) return null;
@@ -124,44 +118,22 @@ function pickSelectName(page, propName){
   return null;
 }
 
-// =========================
-// ✅ 날짜 처리 (start/end)
-// =========================
-function getDateStartEnd(page, propName){
+// ===== 날짜(start) 기준으로 강제 필터링 (겹침/범위 방지) =====
+function getDateStart(page, propName){
   const p = page?.properties?.[propName];
-  if(!p || p.type !== "date") return { start:"", end:"" };
-  const start = p.date?.start ? String(p.date.start).slice(0,10) : "";
-  const end   = p.date?.end   ? String(p.date.end).slice(0,10)   : "";
-  return { start, end };
+  if(!p || p.type !== "date") return "";
+  const start = p.date?.start || "";
+  return start ? String(start).slice(0,10) : "";
 }
 
-// ✅ "start 날짜" 기준으로 월 범위에 들어오는 것만 남김
-function filterByStartDateStrict(pages, propName, startDateInclusive, endDateExclusive){
-  const excludedSamples = [];
+function filterByStartDateStrict(pages, propName, startInclusive, endExclusive){
   const kept = [];
-
   for(const pg of pages){
-    const { start, end } = getDateStartEnd(pg, propName);
-
-    // start가 없으면 제외
-    if(!start){
-      if(excludedSamples.length < 12){
-        excludedSamples.push({ id: pg?.id || "", start:"", end:"" });
-      }
-      continue;
-    }
-
-    // start 기준으로만 판정
-    if(start >= startDateInclusive && start < endDateExclusive){
-      kept.push(pg);
-    }else{
-      if(excludedSamples.length < 12){
-        excludedSamples.push({ id: pg?.id || "", start, end });
-      }
-    }
+    const start = getDateStart(pg, propName);
+    if(!start) continue;
+    if(start >= startInclusive && start < endExclusive) kept.push(pg);
   }
-
-  return { kept, excludedSamples };
+  return kept;
 }
 
 function buildZeroMap(labels){
@@ -197,25 +169,7 @@ function mapToArray(map, labels){
   return arr;
 }
 
-// =========================
-// 디버그 유틸 (날짜별 카운트 / min-max) - start 기준
-// =========================
-function countByDateStart(pages, propName){
-  const m = new Map();
-  for(const pg of pages){
-    const { start } = getDateStartEnd(pg, propName);
-    if(!start) continue;
-    m.set(start, (m.get(start) || 0) + 1);
-  }
-  return Object.fromEntries([...m.entries()].sort((a,b)=>a[0].localeCompare(b[0])));
-}
-function minMaxDateStart(pages, propName){
-  const dates = pages.map(p=>getDateStartEnd(p, propName).start).filter(Boolean).sort();
-  return { min: dates[0] || "", max: dates[dates.length-1] || "" };
-}
-
 export default async function handler(req,res){
-  // CORS (Notion iframe 임베드 대응)
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET,OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
@@ -231,40 +185,25 @@ export default async function handler(req,res){
     const thisRange = monthRangeYMD(month);
     const lastRange = monthRangeYMD(lastMonth);
 
-    // 라벨 순서(노션 등록 순서)
     const workLabels = await getSelectOptionsInOrder(NOTION_DAILY_DB_ID, DAILY_WORK_PROP);
     const outLabels  = await getSelectOptionsInOrder(NOTION_DAILY_DB_ID, DAILY_OUTCOME_PROP);
 
     const safeWorkLabels = workLabels.length ? workLabels : [];
     const safeOutLabels  = outLabels.length  ? outLabels  : [];
 
-    // =========================
-    // 1) 노션에서 월 범위로 "대충" 가져온 뒤
-    // 2) start 날짜 기준으로 "정확히" 다시 필터링
-    // =========================
+    // 1) 노션 쿼리(월 범위) → 2) start 날짜 기준으로 재필터
     const dailyThisRaw = await queryAll(NOTION_DAILY_DB_ID,{
       filter:{ property: DAILY_DATE_PROP, date:{ on_or_after:thisRange.startDate, before:thisRange.endDate } },
       page_size:100,
     });
-
     const dailyLastRaw = await queryAll(NOTION_DAILY_DB_ID,{
       filter:{ property: DAILY_DATE_PROP, date:{ on_or_after:lastRange.startDate, before:lastRange.endDate } },
       page_size:100,
     });
 
-    const thisStrict = filterByStartDateStrict(dailyThisRaw, DAILY_DATE_PROP, thisRange.startDate, thisRange.endDate);
-    const lastStrict = filterByStartDateStrict(dailyLastRaw, DAILY_DATE_PROP, lastRange.startDate, lastRange.endDate);
+    const dailyThisPages = filterByStartDateStrict(dailyThisRaw, DAILY_DATE_PROP, thisRange.startDate, thisRange.endDate);
+    const dailyLastPages = filterByStartDateStrict(dailyLastRaw, DAILY_DATE_PROP, lastRange.startDate, lastRange.endDate);
 
-    const dailyThisPages = thisStrict.kept;
-    const dailyLastPages = lastStrict.kept;
-
-    // 디버그(후처리 기준)
-    const debugThisCountsByDate = countByDateStart(dailyThisPages, DAILY_DATE_PROP);
-    const debugLastCountsByDate = countByDateStart(dailyLastPages, DAILY_DATE_PROP);
-    const debugThisMinMax = minMaxDateStart(dailyThisPages, DAILY_DATE_PROP);
-    const debugLastMinMax = minMaxDateStart(dailyLastPages, DAILY_DATE_PROP);
-
-    // 업무/성과 카운트
     const workThisMap = applyCountsFromPages(buildZeroMap(safeWorkLabels), dailyThisPages, DAILY_WORK_PROP);
     const workLastMap = applyCountsFromPages(buildZeroMap(safeWorkLabels), dailyLastPages, DAILY_WORK_PROP);
 
@@ -280,16 +219,12 @@ export default async function handler(req,res){
     const outThisArr  = mapToArray(outThisMap,  outLabelsFinal);
     const outLastArr  = mapToArray(outLastMap,  outLabelsFinal);
 
-    // =========================
-    // 투두(이번달 마감일)도 동일하게 "start" 기준 후처리
-    // =========================
+    // 투두도 동일 처리
     const todoThisRaw = await queryAll(NOTION_TODO_DB_ID,{
       filter:{ property: TODO_DUE_PROP, date:{ on_or_after:thisRange.startDate, before:thisRange.endDate } },
       page_size:100,
     });
-
-    const todoStrict = filterByStartDateStrict(todoThisRaw, TODO_DUE_PROP, thisRange.startDate, thisRange.endDate);
-    const todoThisPages = todoStrict.kept;
+    const todoThisPages = filterByStartDateStrict(todoThisRaw, TODO_DUE_PROP, thisRange.startDate, thisRange.endDate);
 
     const statusCount = Object.fromEntries(TODO_STATUSES_ALL.map(s=>[s,0]));
     for(const p of todoThisPages){
@@ -342,39 +277,6 @@ export default async function handler(req,res){
           daily:{ date: DAILY_DATE_PROP, work: DAILY_WORK_PROP, outcome: DAILY_OUTCOME_PROP },
           todo:{ due: TODO_DUE_PROP, status: TODO_STATUS_PROP },
         },
-        debug:{
-          codeVer: CODE_VER,
-          build:{
-            commit: process.env.VERCEL_GIT_COMMIT_SHA || "",
-            deployedAt: new Date().toISOString(),
-          },
-          env:{ NOTION_DAILY_DB_ID, NOTION_TODO_DB_ID },
-
-          // ✅ 원본 vs 후처리 비교(핵심)
-          preFilterCount:{
-            dailyThis: dailyThisRaw.length,
-            dailyLast: dailyLastRaw.length,
-            todoThis: todoThisRaw.length,
-          },
-          postFilterCount:{
-            dailyThis: dailyThisPages.length,
-            dailyLast: dailyLastPages.length,
-            todoThis: todoThisPages.length,
-          },
-
-          // ✅ 이번달/전월 min-max, 날짜별 카운트(start 기준)
-          thisMinMax: debugThisMinMax,
-          lastMinMax: debugLastMinMax,
-          thisCountsByDate: debugThisCountsByDate,
-          lastCountsByDate: debugLastCountsByDate,
-
-          // ✅ 왜 빠졌는지 샘플(원인 확인용)
-          excludedSamples:{
-            dailyThis: thisStrict.excludedSamples,
-            dailyLast: lastStrict.excludedSamples,
-            todoThis: todoStrict.excludedSamples,
-          }
-        }
       }
     });
 
