@@ -18,33 +18,26 @@ const API_BASE = "https://api.notion.com/v1";
 
 function pad2(n){ return String(n).padStart(2,"0"); }
 
-// ✅ (수정) KST 기준 "YYYY-MM"을 Intl로 안전하게 생성
 function currentMonthSeoul(){
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Asia/Seoul",
-    year: "numeric",
-    month: "2-digit",
-  }).formatToParts(new Date());
-
-  const y = parts.find(p=>p.type==="year")?.value;
-  const m = parts.find(p=>p.type==="month")?.value;
-  return `${y}-${m}`;
+  const now = new Date();
+  const seoul = new Date(now.getTime() + 9*60*60*1000);
+  const y = seoul.getUTCFullYear();
+  const m = seoul.getUTCMonth() + 1;
+  return `${y}-${pad2(m)}`;
 }
 
-// ✅ (핵심 수정) Notion date 필터는 시간/타임존 없이 "YYYY-MM-DD"로 경계 지정
-function monthRangeDateOnly(yyyyMm){
+function monthRangeSeoul(yyyyMm){
   const [yStr,mStr] = String(yyyyMm).split("-");
   const y = Number(yStr);
   const m = Number(mStr);
   if(!y || !m) throw new Error("Invalid month format. Use YYYY-MM.");
 
-  const startDate = `${y}-${pad2(m)}-01`;
+  const startISO = `${y}-${pad2(m)}-01T00:00:00+09:00`;
 
   let ny=y, nm=m+1;
   if(nm===13){ ny=y+1; nm=1; }
-  const endDate = `${ny}-${pad2(nm)}-01`;
-
-  return { startDate, endDate, y, m };
+  const endISO = `${ny}-${pad2(nm)}-01T00:00:00+09:00`;
+  return { startISO, endISO, y, m };
 }
 
 function prevMonth(yyyyMm){
@@ -112,6 +105,9 @@ async function getSelectOptionsInOrder(databaseId, propName){
   return [];
 }
 
+/**
+ * select / multi_select / status 타입 모두 대응
+ */
 function pickSelectName(page, propName){
   const p = page?.properties?.[propName];
   if(!p) return null;
@@ -156,7 +152,33 @@ function mapToArray(map, labels){
   return arr;
 }
 
+// =========================
+// ✅ 디버그 유틸 (날짜별 카운트 / min-max)
+// =========================
+function getDateStartYYYYMMDD(page, propName){
+  const p = page?.properties?.[propName];
+  if(!p || p.type !== "date") return "";
+  const start = p.date?.start || "";
+  return start ? String(start).slice(0,10) : "";
+}
+
+function countByDate(pages, propName){
+  const m = new Map();
+  for(const pg of pages){
+    const d = getDateStartYYYYMMDD(pg, propName);
+    if(!d) continue;
+    m.set(d, (m.get(d) || 0) + 1);
+  }
+  return Object.fromEntries([...m.entries()].sort((a,b)=>a[0].localeCompare(b[0])));
+}
+
+function minMaxDate(pages, propName){
+  const dates = pages.map(p=>getDateStartYYYYMMDD(p, propName)).filter(Boolean).sort();
+  return { min: dates[0] || "", max: dates[dates.length-1] || "" };
+}
+
 export default async function handler(req,res){
+  // ✅ CORS: Notion 임베드(iframe)에서도 호출 가능하게
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET,OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
@@ -169,26 +191,34 @@ export default async function handler(req,res){
     const month = (req.query?.month || currentMonthSeoul()).toString();
     const lastMonth = prevMonth(month);
 
-    // ✅ 날짜만 경계
-    const thisRange = monthRangeDateOnly(month);
-    const lastRange = monthRangeDateOnly(lastMonth);
+    const thisRange = monthRangeSeoul(month);
+    const lastRange = monthRangeSeoul(lastMonth);
 
+    // 라벨 순서(노션 등록 순서)
     const workLabels = await getSelectOptionsInOrder(NOTION_DAILY_DB_ID, DAILY_WORK_PROP);
     const outLabels  = await getSelectOptionsInOrder(NOTION_DAILY_DB_ID, DAILY_OUTCOME_PROP);
 
     const safeWorkLabels = workLabels.length ? workLabels : [];
     const safeOutLabels  = outLabels.length  ? outLabels  : [];
 
-    // ✅ (핵심) date filter에 시간 없는 YYYY-MM-DD만 사용
+    // =========================
+    // 일일업무기록 집계(이번달/전월)
+    // =========================
     const dailyThisPages = await queryAll(NOTION_DAILY_DB_ID,{
-      filter:{ property: DAILY_DATE_PROP, date:{ on_or_after:thisRange.startDate, before:thisRange.endDate } },
+      filter:{ property: DAILY_DATE_PROP, date:{ on_or_after:thisRange.startISO, before:thisRange.endISO } },
       page_size:100,
     });
 
     const dailyLastPages = await queryAll(NOTION_DAILY_DB_ID,{
-      filter:{ property: DAILY_DATE_PROP, date:{ on_or_after:lastRange.startDate, before:lastRange.endDate } },
+      filter:{ property: DAILY_DATE_PROP, date:{ on_or_after:lastRange.startISO, before:lastRange.endISO } },
       page_size:100,
     });
+
+    // ✅ 디버그 데이터 생성 (문제 원인 확정용)
+    const debugThisCountsByDate = countByDate(dailyThisPages, DAILY_DATE_PROP);
+    const debugLastCountsByDate = countByDate(dailyLastPages, DAILY_DATE_PROP);
+    const debugThisMinMax = minMaxDate(dailyThisPages, DAILY_DATE_PROP);
+    const debugLastMinMax = minMaxDate(dailyLastPages, DAILY_DATE_PROP);
 
     const workThisMap = applyCountsFromPages(buildZeroMap(safeWorkLabels), dailyThisPages, DAILY_WORK_PROP);
     const workLastMap = applyCountsFromPages(buildZeroMap(safeWorkLabels), dailyLastPages, DAILY_WORK_PROP);
@@ -205,15 +235,17 @@ export default async function handler(req,res){
     const outThisArr  = mapToArray(outThisMap,  outLabelsFinal);
     const outLastArr  = mapToArray(outLastMap,  outLabelsFinal);
 
-    // ✅ 투두(이번달 마감일)도 동일하게 날짜만 경계
+    // =========================
+    // 투두(이번달 마감일 기준)
+    // =========================
     const todoThisPages = await queryAll(NOTION_TODO_DB_ID,{
-      filter:{ property: TODO_DUE_PROP, date:{ on_or_after:thisRange.startDate, before:thisRange.endDate } },
+      filter:{ property: TODO_DUE_PROP, date:{ on_or_after:thisRange.startISO, before:thisRange.endISO } },
       page_size:100,
     });
 
     const statusCount = Object.fromEntries(TODO_STATUSES_ALL.map(s=>[s,0]));
     for(const p of todoThisPages){
-      const st = pickSelectName(p, TODO_STATUS_PROP);
+      const st = pickSelectName(p, TODO_STATUS_PROP); // status/select 모두 대응
       if(!st) continue;
       if(statusCount[st] === undefined) statusCount[st] = 0;
       statusCount[st] += 1;
@@ -234,6 +266,7 @@ export default async function handler(req,res){
     res.setHeader("Content-Type","application/json; charset=utf-8");
     res.setHeader("Cache-Control","no-store");
 
+    // ✅ 메타에 range(YYYY-MM-DD)도 같이 내려줌 (네가 확인하기 편하게)
     return res.status(200).json({
       kpi:{
         month,
@@ -255,13 +288,24 @@ export default async function handler(req,res){
         lastMonth,
         tz:"Asia/Seoul(+09:00)",
         range:{
-          this: { startDate: thisRange.startDate, endDate: thisRange.endDate },
-          last: { startDate: lastRange.startDate, endDate: lastRange.endDate },
+          this:{ startDate: thisRange.startISO.slice(0,10), endDate: thisRange.endISO.slice(0,10) },
+          last:{ startDate: lastRange.startISO.slice(0,10), endDate: lastRange.endISO.slice(0,10) },
         },
         prop:{
           daily:{ date: DAILY_DATE_PROP, work: DAILY_WORK_PROP, outcome: DAILY_OUTCOME_PROP },
           todo:{ due: TODO_DUE_PROP, status: TODO_STATUS_PROP },
         },
+        // ✅ 여기! 문제 확정용 디버그
+        debug:{
+          env:{
+            NOTION_DAILY_DB_ID,
+            NOTION_TODO_DB_ID
+          },
+          thisMinMax: debugThisMinMax,
+          lastMinMax: debugLastMinMax,
+          thisCountsByDate: debugThisCountsByDate,
+          lastCountsByDate: debugLastCountsByDate
+        }
       }
     });
 
