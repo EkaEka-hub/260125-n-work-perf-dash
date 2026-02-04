@@ -1,3 +1,4 @@
+<!-- /yearly/index.html -->
 <!doctype html>
 <html lang="ko">
 <head>
@@ -10,77 +11,93 @@
       --shadow: 0 6px 18px rgba(0,0,0,.04);
       --text: #111;
       --muted: rgba(0,0,0,.55);
-      --blue: rgba(59,130,246,0.78);
-      --gray: rgba(0,0,0,0.18);
-      --card: #fff;
-      --radius: 14px;
-    }
-    *{ box-sizing:border-box; }
-    body{
-      margin:0;
-      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans KR", Arial, sans-serif;
-      background:#fff;
-      color:var(--text);
-    }
-    .wrap{
-      max-width:1100px;
-      margin:0 auto;
-      padding:12px 12px 18px;
+      --soft: rgba(0,0,0,.06);
+
+      --blue: rgba(59,130,246,0.78);     /* 업무유형 */
+      --orange: rgba(249,115,22,0.78);   /* 성과유형 */
+      --zero: rgba(0,0,0,0.18);
+      --last: rgba(0,0,0,0.18);
+      --green: rgba(34,197,94,1);
+      --red: rgba(239,68,68,1);
     }
 
-    /* 헤더(연도 이동) */
-    .yearHead{
+    *{ box-sizing:border-box; }
+    html, body{
+      margin:0;
+      padding:0;
+      background:#fff;
+      color:var(--text);
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans KR", Arial, sans-serif;
+    }
+
+    .wrap{
+      max-width:1100px;
+      width:100%;
+      margin:0 auto;
+      padding:14px 14px 18px;
+    }
+
+    /* 상단: 연도 네비 + 안내 */
+    .top{
       display:flex;
       align-items:center;
       justify-content:space-between;
-      gap:10px;
+      gap:12px;
       margin-bottom:10px;
     }
     .yearNav{
       display:flex;
       align-items:center;
       gap:10px;
+      min-width:0;
     }
     .btn{
+      width:28px; height:28px;
       border:1px solid var(--border);
+      border-radius:9px;
       background:#fff;
-      border-radius:12px;
-      padding:8px 10px;
-      font-weight:900;
+      box-shadow: 0 2px 10px rgba(0,0,0,.04);
       cursor:pointer;
-      box-shadow: var(--shadow);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-weight:900;
+      user-select:none;
     }
     .yearTitle{
       font-size:20px;
-      font-weight:950;
+      font-weight:900;
       letter-spacing:-0.2px;
-      min-width:110px;
-      text-align:center;
+      white-space:nowrap;
     }
-    .hint{
+    .hintTop{
       font-size:12px;
       color:var(--muted);
-      font-weight:600;
+      font-weight:700;
       white-space:nowrap;
       overflow:hidden;
       text-overflow:ellipsis;
     }
 
-    /* KPI 카드 */
-    .kpiGrid{
+    /* 카드 그리드 */
+    .grid{
       display:grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: repeat(4, minmax(0, 1fr));
       gap:10px;
-      margin-top:10px;
+      align-items:stretch;
       margin-bottom:12px;
     }
-    @media (min-width:820px){
-      .kpiGrid{ grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    @media (max-width: 980px){
+      .grid{ grid-template-columns: repeat(2, minmax(0,1fr)); }
     }
+    @media (max-width: 520px){
+      .grid{ grid-template-columns: 1fr; }
+    }
+
     .card{
       border:1px solid var(--border);
-      background:var(--card);
-      border-radius: var(--radius);
+      border-radius:14px;
+      background:#fff;
       box-shadow: var(--shadow);
       padding:12px 14px;
       min-width:0;
@@ -88,16 +105,17 @@
     .k{
       font-size:13px;
       color:var(--muted);
-      font-weight:800;
       margin-bottom:6px;
+      font-weight:800;
       white-space:nowrap;
       overflow:hidden;
       text-overflow:ellipsis;
     }
     .v{
-      font-size:22px;
-      font-weight:950;
+      font-size:23px;
+      font-weight:900;
       letter-spacing:-0.2px;
+      line-height:1.1;
       white-space:nowrap;
       overflow:hidden;
       text-overflow:ellipsis;
@@ -105,132 +123,157 @@
     .sub{
       margin-top:6px;
       font-size:12px;
-      color:rgba(0,0,0,.45);
-      font-weight:700;
+      color:rgba(0,0,0,.5);
+      font-weight:600;
       white-space:nowrap;
       overflow:hidden;
       text-overflow:ellipsis;
     }
 
-    /* 연간 월별 막대 */
+    /* 월별 총 업무(막대) */
     .panel{
       border:1px solid var(--border);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
+      border-radius:14px;
       background:#fff;
+      box-shadow: var(--shadow);
       padding:12px 14px 14px;
+      margin-bottom:14px;
       overflow-x:auto;
+      overflow-y:hidden;
     }
     .panelTitle{
-      font-size:14px;
-      font-weight:950;
       margin:0 0 10px;
+      font-size:14px;
+      font-weight:900;
       letter-spacing:-0.2px;
       white-space:nowrap;
     }
-    .barWrap{
+
+    .months{
       display:flex;
       gap:8px;
       align-items:flex-end;
       width:fit-content;
       padding-bottom:2px;
     }
-    .barCol{
-      width:46px;
+    .mCol{
+      width:58px;
       display:flex;
       flex-direction:column;
       align-items:center;
       gap:6px;
       cursor:pointer;
       user-select:none;
+      flex:0 0 auto;
     }
-    .bar{
+    .mBox{
       width:100%;
-      height:160px;
-      border-radius:10px;
-      background: rgba(0,0,0,0.06);
+      height:120px;
+      border-radius:12px;
+      background: rgba(0,0,0,.06);
       position:relative;
       overflow:hidden;
-      border:1px solid rgba(0,0,0,0.04);
+      border: 1px solid rgba(0,0,0,.04);
     }
-    .fill{
+    .mFill{
       position:absolute;
-      left:0; right:0; bottom:0;
+      left:0; right:0;
+      bottom:0;
       height:0%;
       background: var(--blue);
-      border-radius:10px;
+      border-radius:12px;
       transition: height .25s ease;
     }
-    .barVal{
+    .mVal{
       position:absolute;
-      left:50%;
-      transform: translateX(-50%);
-      font-size:11px;
-      font-weight:950;
-      white-space:nowrap;
-      color: rgba(0,0,0,.65);
       top:6px;
-      pointer-events:none;
-    }
-    .barMonth{
+      left:0; right:0;
+      text-align:center;
       font-size:12px;
       font-weight:900;
-      color: rgba(0,0,0,.8);
+      color: rgba(0,0,0,.65);
+      pointer-events:none;
+    }
+    .mLab{
+      font-size:12px;
+      font-weight:900;
+      color: rgba(0,0,0,.85);
       white-space:nowrap;
     }
-    .selected .bar{
-      outline: 2px solid rgba(59,130,246,0.35);
+
+    .mCol.active .mBox{
+      outline: 2px solid rgba(59,130,246,.35);
       outline-offset: 2px;
+      background: rgba(59,130,246,.10);
     }
 
-    /* 월 상세(클릭 시 펼침) */
-    .detail{
-      margin-top:12px;
-      display:none;
-    }
-    .detail.open{ display:block; }
+    /* 월간 상세 영역 */
     .detailHead{
       display:flex;
+      align-items:center;
       justify-content:space-between;
-      align-items:baseline;
       gap:10px;
-      margin-bottom:10px;
+      margin: 8px 0 10px;
     }
     .detailTitle{
       font-size:16px;
-      font-weight:950;
+      font-weight:900;
       letter-spacing:-0.2px;
+      margin:0;
       white-space:nowrap;
     }
     .closeBtn{
       border:1px solid var(--border);
+      border-radius:999px;
       background:#fff;
-      border-radius:12px;
-      padding:6px 10px;
+      font-size:12px;
       font-weight:900;
+      padding:6px 10px;
       cursor:pointer;
+      box-shadow: 0 2px 10px rgba(0,0,0,.04);
     }
 
-    .monthKpiGrid{
+    .detailGrid{
       display:grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: repeat(4, minmax(0,1fr));
       gap:10px;
+      align-items:stretch;
       margin-bottom:10px;
     }
-    @media (min-width:820px){
-      .monthKpiGrid{ grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    @media (max-width: 980px){
+      .detailGrid{ grid-template-columns: repeat(2, minmax(0,1fr)); }
+    }
+    @media (max-width: 520px){
+      .detailGrid{ grid-template-columns: 1fr; }
     }
 
-    .miniGrid{
+    .twoPanels{
       display:grid;
-      grid-template-columns: 1fr;
+      grid-template-columns: 1fr 1fr;
       gap:10px;
+      align-items:stretch;
     }
-    @media (min-width:980px){
-      .miniGrid{ grid-template-columns: 1fr 1fr; }
+    @media (max-width: 860px){
+      .twoPanels{ grid-template-columns: 1fr; }
     }
 
-    /* 가로막대(업무유형/성과유형) */
+    .panelCard{
+      border:1px solid var(--border);
+      border-radius:14px;
+      background:#fff;
+      box-shadow: var(--shadow);
+      padding:12px 14px;
+      overflow:hidden;
+    }
+    .panelCard h3{
+      margin:0 0 10px;
+      font-size:14px;
+      font-weight:900;
+      letter-spacing:-0.2px;
+      white-space:nowrap;
+    }
+
+    /* 가로막대(월간 상세) */
     .rows{
       display:flex;
       flex-direction:column;
@@ -241,26 +284,27 @@
       grid-template-columns: 140px 1fr;
       gap:10px;
       align-items:center;
+      min-width:0;
     }
     .label{
       font-size:12px;
-      font-weight:950;
+      font-weight:900;
+      color: rgba(0,0,0,.85);
       white-space:nowrap;
       overflow:hidden;
       text-overflow:ellipsis;
     }
     .track{
       height:16px;
-      border-radius:999px;
-      background: rgba(0,0,0,0.06);
-      overflow:hidden;
+      border-radius:8px;
+      background: rgba(0,0,0,.06);
       position:relative;
+      overflow:hidden;
     }
     .fillH{
       height:100%;
       width:0%;
-      border-radius:999px;
-      background: var(--blue);
+      border-radius:8px;
       position:relative;
       min-width:0;
     }
@@ -270,8 +314,8 @@
       top:50%;
       transform: translateY(-50%);
       font-size:11px;
-      font-weight:950;
-      color: rgba(255,255,255,0.95);
+      font-weight:900;
+      color: rgba(255,255,255,.95);
       pointer-events:none;
     }
     .valZero{
@@ -280,64 +324,82 @@
       top:50%;
       transform: translateY(-50%);
       font-size:11px;
-      font-weight:950;
-      color: rgba(0,0,0,0.55);
+      font-weight:900;
+      color: rgba(0,0,0,.55);
       pointer-events:none;
+    }
+
+    /* 로딩/에러 */
+    .miniHint{
+      font-size:12px;
+      color: var(--muted);
+      font-weight:700;
+    }
+    .err{
+      color: rgba(239,68,68,.9);
+      font-weight:900;
     }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <div class="yearHead">
+    <div class="top">
       <div class="yearNav">
-        <button class="btn" id="prevYear">◀</button>
+        <div class="btn" id="prevYear" aria-label="prev year">◀</div>
         <div class="yearTitle" id="yearTitle">-</div>
-        <button class="btn" id="nextYear">▶</button>
+        <div class="btn" id="nextYear" aria-label="next year">▶</div>
       </div>
-      <div class="hint" id="topHint">연도 선택 · 월 클릭으로 상세 보기</div>
+      <div class="hintTop">연도 선택 · 월 클릭으로 상세 보기</div>
     </div>
 
-    <div class="kpiGrid">
+    <!-- 연간 요약 카드 4개 -->
+    <div class="grid">
       <div class="card">
         <div class="k">연간 총 업무</div>
-        <div class="v"><span id="yTotal">0</span>건</div>
+        <div class="v"><span id="yearTotal">0</span>건</div>
       </div>
+
       <div class="card">
         <div class="k">월 평균</div>
-        <div class="v"><span id="yAvg">0</span>건</div>
+        <div class="v"><span id="yearAvg">0</span>건</div>
+        <div class="sub" id="avgRule">기준: 데이터가 있는 달</div>
       </div>
+
       <div class="card">
         <div class="k">최대 월</div>
-        <div class="v" id="yMax">-</div>
-        <div class="sub" id="yMaxSub">-</div>
+        <div class="v" id="yearMaxMonth">-</div>
+        <div class="sub" id="yearMaxSub">-</div>
       </div>
+
       <div class="card">
         <div class="k">최소 월</div>
-        <div class="v" id="yMin">-</div>
-        <div class="sub" id="yMinSub">-</div>
+        <div class="v" id="yearMinMonth">-</div>
+        <div class="sub" id="yearMinSub">-</div>
       </div>
     </div>
 
+    <!-- 월별 총 업무 -->
     <div class="panel">
-      <h3 class="panelTitle">월별 총 업무 (클릭해서 월간 상세 보기)</h3>
-      <div class="barWrap" id="bars"></div>
+      <div class="panelTitle">월별 총 업무 (클릭해서 월간 상세 보기)</div>
+      <div class="months" id="months"></div>
+      <div class="miniHint" id="yearHint" style="margin-top:8px;"></div>
     </div>
 
-    <!-- 월 상세 -->
-    <div class="detail" id="detail">
+    <!-- 월간 상세 -->
+    <div id="detail" style="display:none;">
       <div class="detailHead">
-        <div class="detailTitle" id="detailTitle">-</div>
+        <h2 class="detailTitle" id="detailTitle">-</h2>
         <button class="closeBtn" id="closeDetail">닫기</button>
       </div>
 
-      <div class="monthKpiGrid">
+      <div class="detailGrid">
         <div class="card">
           <div class="k">총 업무</div>
           <div class="v"><span id="mTotal">0</span>건</div>
         </div>
         <div class="card">
           <div class="k">계획업무(완료/전체)</div>
-          <div class="v" id="mPlanned">-/-</div>
+          <div class="v" id="mPlanned">0/0</div>
           <div class="sub">완료 기준: 완료+보류</div>
         </div>
         <div class="card">
@@ -351,221 +413,332 @@
         </div>
       </div>
 
-      <div class="miniGrid">
-        <div class="panel">
-          <h3 class="panelTitle">업무유형</h3>
+      <div class="twoPanels">
+        <div class="panelCard">
+          <h3>업무유형</h3>
           <div class="rows" id="workRows"></div>
+          <div class="miniHint" id="workHint"></div>
         </div>
-        <div class="panel">
-          <h3 class="panelTitle">성과유형</h3>
+
+        <div class="panelCard">
+          <h3>성과유형</h3>
           <div class="rows" id="outRows"></div>
+          <div class="miniHint" id="outHint"></div>
         </div>
       </div>
     </div>
-
   </div>
 
   <script>
-    (function(){
-      const $ = (id) => document.getElementById(id);
+    // ===== 유틸 =====
+    function pad2(n){ return String(n).padStart(2,"0"); }
+    function ym(year, month){ return `${year}-${pad2(month)}`; }
 
-      let currentYear = new Date().getFullYear();
-      let selectedMonth = "";
+    // Asia/Seoul 기준 현재 연도/월
+    function nowSeoul(){
+      const now = new Date();
+      const seoul = new Date(now.getTime() + 9*60*60*1000);
+      return { y: seoul.getUTCFullYear(), m: seoul.getUTCMonth()+1 };
+    }
 
-      function monthLabel(yyyyMm){
-        const mm = yyyyMm.slice(5,7);
-        return `${Number(mm)}월`;
+    // ===== 설정(월 평균 계산 기준) =====
+    // "DATA_MONTHS"  : 데이터 있는 달만 평균 (0달 제외)  ← 현재 기본
+    // "ELAPSED_MONTHS": 해당 연도의 1월~현재월(또는 12월) 기준으로 평균(0도 포함)
+    const AVG_MODE = "DATA_MONTHS";
+
+    // ===== DOM =====
+    const $ = (id) => document.getElementById(id);
+
+    const yearTitle = $("yearTitle");
+    const monthsEl = $("months");
+    const yearHint = $("yearHint");
+
+    const yearTotalEl = $("yearTotal");
+    const yearAvgEl = $("yearAvg");
+    const avgRuleEl = $("avgRule");
+    const yearMaxMonthEl = $("yearMaxMonth");
+    const yearMaxSubEl = $("yearMaxSub");
+    const yearMinMonthEl = $("yearMinMonth");
+    const yearMinSubEl = $("yearMinSub");
+
+    const detailEl = $("detail");
+    const detailTitleEl = $("detailTitle");
+
+    const blue = getComputedStyle(document.documentElement).getPropertyValue("--blue").trim() || "rgba(59,130,246,0.78)";
+    const orange = getComputedStyle(document.documentElement).getPropertyValue("--orange").trim() || "rgba(249,115,22,0.78)";
+    const zero = getComputedStyle(document.documentElement).getPropertyValue("--zero").trim() || "rgba(0,0,0,0.18)";
+
+    // ===== API =====
+    async function fetchMonthly(monthStr){
+      const r = await fetch(`/api/monthly?month=${encodeURIComponent(monthStr)}`, { cache:"no-store" });
+      const j = await r.json();
+      if(j?.error) throw new Error(j.error);
+      return j;
+    }
+
+    // ===== 렌더(가로막대) =====
+    function renderHorizontalBars(containerId, labels, values, color){
+      const root = document.getElementById(containerId);
+      const hintId = containerId === "workRows" ? "workHint" : "outHint";
+      const hint = document.getElementById(hintId);
+
+      if(!root) return;
+      root.innerHTML = "";
+      if(hint) hint.textContent = "";
+
+      const labs = labels || [];
+      const vals = (values || []).map(v => Number(v || 0));
+
+      if(!labs.length){
+        if(hint) hint.textContent = "데이터 없음";
+        return;
       }
 
-      function setText(id, text){
-        const el = $(id);
-        if(el) el.textContent = text;
-      }
+      const max = Math.max(1, ...vals);
 
-      async function fetchYearly(year){
-        const res = await fetch(`/api/yearly?year=${encodeURIComponent(year)}`, { cache:"no-store" });
-        const data = await res.json();
-        if(data?.error) throw new Error(data.error);
-        return data;
-      }
+      labs.forEach((name, i) => {
+        const v = Number(vals[i] || 0);
 
-      async function fetchMonthly(month){
-        const res = await fetch(`/api/monthly?month=${encodeURIComponent(month)}`, { cache:"no-store" });
-        const data = await res.json();
-        if(data?.error) throw new Error(data.error);
-        return data;
-      }
+        const row = document.createElement("div");
+        row.className = "row";
 
-      function renderYearKpi(data){
-        setText("yearTitle", `${data.year}년`);
-        setText("yTotal", data?.kpi?.yearlyTotalWork ?? 0);
-        setText("yAvg", data?.kpi?.monthlyAvg ?? 0);
+        const label = document.createElement("div");
+        label.className = "label";
+        label.textContent = name;
+        label.title = name;
 
-        const max = data?.kpi?.max || {};
-        const min = data?.kpi?.min || {};
+        const track = document.createElement("div");
+        track.className = "track";
 
-        setText("yMax", max?.month ? monthLabel(max.month) : "-");
-        setText("yMaxSub", max?.month ? `${max.month} · ${max.value ?? 0}건` : "-");
-
-        setText("yMin", min?.month ? monthLabel(min.month) : "-");
-        setText("yMinSub", min?.month ? `${min.month} · ${min.value ?? 0}건` : "-");
-      }
-
-      function clearBars(){
-        const el = $("bars");
-        el.innerHTML = "";
-      }
-
-      function renderBars(data){
-        clearBars();
-
-        const months = data.months || [];
-        const totals = (data.totals || []).map(n => Number(n || 0));
-        const max = Math.max(1, ...totals);
-
-        months.forEach((m, idx) => {
-          const v = totals[idx] || 0;
-
-          const col = document.createElement("div");
-          col.className = "barCol";
-          col.dataset.month = m;
-
-          const bar = document.createElement("div");
-          bar.className = "bar";
-
-          const fill = document.createElement("div");
-          fill.className = "fill";
+        if(v === 0){
+          const z = document.createElement("div");
+          z.className = "valZero";
+          z.textContent = "0";
+          track.appendChild(z);
+        }else{
           const pct = Math.max(0, Math.min(100, (v / max) * 100));
-          requestAnimationFrame(() => fill.style.height = pct.toFixed(2) + "%");
-
-          const val = document.createElement("div");
-          val.className = "barVal";
-          val.textContent = String(v);
-
-          bar.appendChild(fill);
-          bar.appendChild(val);
-
-          const lab = document.createElement("div");
-          lab.className = "barMonth";
-          lab.textContent = monthLabel(m);
-
-          col.appendChild(bar);
-          col.appendChild(lab);
-
-          col.addEventListener("click", async () => {
-            await openMonth(m);
-          });
-
-          $("bars").appendChild(col);
-        });
-      }
-
-      function markSelected(month){
-        const cols = document.querySelectorAll(".barCol");
-        cols.forEach(c => {
-          if(c.dataset.month === month) c.classList.add("selected");
-          else c.classList.remove("selected");
-        });
-      }
-
-      function renderHorizontalBars(containerId, labels, values){
-        const root = $(containerId);
-        root.innerHTML = "";
-
-        const vals = (values || []).map(v => Number(v || 0));
-        const max = Math.max(1, ...vals);
-
-        (labels || []).forEach((name, i) => {
-          const v = vals[i] || 0;
-          const row = document.createElement("div");
-          row.className = "row";
-
-          const label = document.createElement("div");
-          label.className = "label";
-          label.textContent = name;
-          label.title = name;
-
-          const track = document.createElement("div");
-          track.className = "track";
-
           const fill = document.createElement("div");
           fill.className = "fillH";
+          fill.style.width = pct.toFixed(2) + "%";
+          fill.style.background = color;
 
-          if(v === 0){
-            fill.style.width = "0%";
-            const z = document.createElement("div");
-            z.className = "valZero";
-            z.textContent = "0";
-            track.appendChild(z);
-          }else{
-            const pct = Math.max(0, Math.min(100, (v / max) * 100));
-            fill.style.width = pct.toFixed(2) + "%";
-            const val = document.createElement("div");
-            val.className = "valIn";
-            val.textContent = String(v);
-            fill.appendChild(val);
-            track.appendChild(fill);
-          }
+          const val = document.createElement("div");
+          val.className = "valIn";
+          val.textContent = String(v);
 
-          row.appendChild(label);
-          row.appendChild(track);
-          root.appendChild(row);
-        });
-      }
+          fill.appendChild(val);
+          track.appendChild(fill);
+        }
 
-      async function openMonth(month){
-        selectedMonth = month;
-        markSelected(month);
-
-        $("detail").classList.add("open");
-        setText("detailTitle", `${month} · 월간 상세`);
-
-        // 월간 데이터(기존 monthly 재사용)
-        const data = await fetchMonthly(month);
-
-        const kpi = data?.kpi || {};
-        setText("mTotal", kpi.monthlyTotalWork ?? 0);
-
-        const done = Number(kpi.plannedDone ?? 0);
-        const total = Number(kpi.plannedTotal ?? 0);
-        $("mPlanned").textContent = total ? `${done}/${total}` : "-/-";
-
-        setText("mRate", kpi.planRate ?? 0);
-        setText("mRateSub", total ? `(${done}/${total})` : "-");
-        setText("mUnplanned", kpi.unplanned ?? 0);
-
-        renderHorizontalBars("workRows", data?.work?.labels || [], data?.work?.this || []);
-        renderHorizontalBars("outRows", data?.outcome?.labels || [], data?.outcome?.this || []);
-      }
-
-      function closeMonth(){
-        selectedMonth = "";
-        markSelected("");
-        $("detail").classList.remove("open");
-      }
-
-      async function loadYear(year){
-        currentYear = year;
-        closeMonth();
-
-        const data = await fetchYearly(year);
-        renderYearKpi(data);
-        renderBars(data);
-      }
-
-      $("prevYear").addEventListener("click", () => loadYear(currentYear - 1));
-      $("nextYear").addEventListener("click", () => loadYear(currentYear + 1));
-      $("closeDetail").addEventListener("click", closeMonth);
-
-      // 초기 로드: url ?year=2026 지원
-      const qs = new URLSearchParams(location.search);
-      const y = Number(qs.get("year"));
-      if(y) currentYear = y;
-
-      loadYear(currentYear).catch(err => {
-        $("topHint").textContent = String(err?.message || err);
+        row.appendChild(label);
+        row.appendChild(track);
+        root.appendChild(row);
       });
-    })();
+    }
+
+    // ===== 상태 =====
+    const state = {
+      year: nowSeoul().y,
+      monthData: new Map(), // "YYYY-MM" -> monthly json
+      selectedMonth: null
+    };
+
+    // ===== 연간 데이터 로드(12개월 monthly 호출) =====
+    async function loadYear(year){
+      state.year = year;
+      state.selectedMonth = null;
+      state.monthData.clear();
+
+      yearTitle.textContent = `${year}년`;
+      yearHint.textContent = "불러오는 중…";
+      monthsEl.innerHTML = "";
+      detailEl.style.display = "none";
+
+      // 1) 12개월 모두 호출 (정확성 우선)
+      const months = Array.from({length:12}, (_,i)=> ym(year, i+1));
+
+      // 병렬 호출 (너무 빠르게 튀지 않게 약간의 안전장치: 4개씩)
+      const results = [];
+      for(let i=0;i<months.length;i+=4){
+        const chunk = months.slice(i,i+4);
+        const chunkRes = await Promise.allSettled(chunk.map(m => fetchMonthly(m)));
+        results.push(...chunkRes.map((r, idx) => ({ month: chunk[idx], r })));
+      }
+
+      let okCount = 0;
+      for(const it of results){
+        if(it.r.status === "fulfilled"){
+          state.monthData.set(it.month, it.r.value);
+          okCount++;
+        }else{
+          // 실패한 월은 0으로 취급하되, 디버깅용 힌트만 남김
+          state.monthData.set(it.month, null);
+        }
+      }
+
+      // 2) 월별 합계/평균 계산
+      const monthTotals = months.map(m=>{
+        const d = state.monthData.get(m);
+        const total = d?.kpi?.monthlyTotalWork ?? 0;
+        return { month: m, total, ok: !!d };
+      });
+
+      const totalYear = monthTotals.reduce((a,b)=> a + (b.total||0), 0);
+
+      // 평균 모드
+      let denom = 12;
+      let denomLabel = "기준: 12개월(0 포함)";
+      const { y: curY, m: curM } = nowSeoul();
+
+      if(AVG_MODE === "DATA_MONTHS"){
+        denom = monthTotals.filter(x => (x.total||0) > 0).length || 0;
+        denomLabel = "기준: 데이터가 있는 달";
+      }else if(AVG_MODE === "ELAPSED_MONTHS"){
+        denom = (year === curY) ? curM : 12;
+        denomLabel = (year === curY) ? "기준: 1월~현재월(0 포함)" : "기준: 12개월(0 포함)";
+      }
+
+      const avg = denom > 0 ? Math.round(totalYear / denom) : 0;
+      avgRuleEl.textContent = denomLabel;
+
+      // 최대/최소(최소는 “데이터 있는 달” 기준으로 잡는 게 일반적이라 그렇게 처리)
+      const withData = monthTotals.filter(x => x.total > 0);
+      const maxItem = withData.length ? withData.reduce((p,c)=> (c.total>p.total?c:p), withData[0]) : null;
+      const minItem = withData.length ? withData.reduce((p,c)=> (c.total<p.total?c:p), withData[0]) : null;
+
+      // 3) 상단 카드 반영
+      yearTotalEl.textContent = String(totalYear);
+      yearAvgEl.textContent = String(avg);
+
+      if(maxItem){
+        const mm = Number(maxItem.month.slice(5,7));
+        yearMaxMonthEl.textContent = `${mm}월`;
+        yearMaxSubEl.textContent = `${maxItem.month} · ${maxItem.total}건`;
+      }else{
+        yearMaxMonthEl.textContent = "-";
+        yearMaxSubEl.textContent = "-";
+      }
+
+      if(minItem){
+        const mm = Number(minItem.month.slice(5,7));
+        yearMinMonthEl.textContent = `${mm}월`;
+        yearMinSubEl.textContent = `${minItem.month} · ${minItem.total}건`;
+      }else{
+        yearMinMonthEl.textContent = "-";
+        yearMinSubEl.textContent = "-";
+      }
+
+      // 4) 월별 막대 렌더
+      renderMonthBars(monthTotals);
+
+      // 5) 로딩 힌트
+      yearHint.textContent = okCount ? "" : "데이터를 불러오지 못했어요.";
+    }
+
+    function renderMonthBars(monthTotals){
+      monthsEl.innerHTML = "";
+
+      const max = Math.max(1, ...monthTotals.map(x => Number(x.total||0)));
+
+      monthTotals.forEach((it, idx) => {
+        const m = idx + 1;
+        const col = document.createElement("div");
+        col.className = "mCol";
+        col.dataset.month = it.month;
+
+        const box = document.createElement("div");
+        box.className = "mBox";
+
+        const fill = document.createElement("div");
+        fill.className = "mFill";
+        fill.style.background = (it.total === 0 ? zero : blue);
+
+        const val = document.createElement("div");
+        val.className = "mVal";
+        val.textContent = String(it.total || 0);
+
+        box.appendChild(fill);
+        box.appendChild(val);
+
+        const lab = document.createElement("div");
+        lab.className = "mLab";
+        lab.textContent = `${m}월`;
+
+        col.appendChild(box);
+        col.appendChild(lab);
+
+        // 애니메이션 높이
+        requestAnimationFrame(() => {
+          const pct = Math.max(0, Math.min(100, (Number(it.total||0) / max) * 100));
+          fill.style.height = pct.toFixed(1) + "%";
+        });
+
+        col.addEventListener("click", () => openMonth(it.month));
+        monthsEl.appendChild(col);
+      });
+    }
+
+    // ===== 월 상세 열기 =====
+    async function openMonth(monthStr){
+      // active 표시
+      document.querySelectorAll(".mCol").forEach(el=>{
+        el.classList.toggle("active", el.dataset.month === monthStr);
+      });
+
+      state.selectedMonth = monthStr;
+
+      detailEl.style.display = "block";
+      detailTitleEl.textContent = `${monthStr} · 월간 상세`;
+
+      // 이 월 데이터는 이미 연간 로드에서 받아왔지만, 혹시 실패했으면 여기서 재시도
+      let data = state.monthData.get(monthStr);
+      if(!data){
+        try{
+          data = await fetchMonthly(monthStr);
+          state.monthData.set(monthStr, data);
+        }catch(e){
+          $("mTotal").textContent = "0";
+          $("mPlanned").textContent = "-";
+          $("mRate").textContent = "0";
+          $("mRateSub").textContent = "-";
+          $("mUnplanned").textContent = "0";
+          $("workRows").innerHTML = "";
+          $("outRows").innerHTML = "";
+          $("workHint").textContent = "오류: " + String(e?.message || e);
+          $("outHint").textContent  = "오류: " + String(e?.message || e);
+          return;
+        }
+      }
+
+      const kpi = data?.kpi || {};
+      const total = Number(kpi.monthlyTotalWork || 0);
+      const plannedTotal = Number(kpi.plannedTotal || 0);
+      const plannedDone = Number(kpi.plannedDone || 0);
+      const unplanned = Number(kpi.unplanned || 0);
+      const rate = Number(kpi.planRate || 0);
+
+      $("mTotal").textContent = String(total);
+      $("mPlanned").textContent = plannedTotal ? `${plannedDone}/${plannedTotal}` : `0/0`;
+      $("mRate").textContent = String(rate);
+      $("mRateSub").textContent = plannedTotal ? `${plannedDone}/${plannedTotal}` : "-";
+      $("mUnplanned").textContent = String(unplanned);
+
+      // ✅ 여기: 업무=파랑 / 성과=주황 (요청 반영)
+      renderHorizontalBars("workRows", data?.work?.labels || [], data?.work?.this || [], blue);
+      renderHorizontalBars("outRows",  data?.outcome?.labels || [], data?.outcome?.this || [], orange);
+    }
+
+    // ===== 이벤트 =====
+    $("prevYear").addEventListener("click", ()=> loadYear(state.year - 1));
+    $("nextYear").addEventListener("click", ()=> loadYear(state.year + 1));
+    $("closeDetail").addEventListener("click", ()=>{
+      detailEl.style.display = "none";
+      state.selectedMonth = null;
+      document.querySelectorAll(".mCol").forEach(el=> el.classList.remove("active"));
+    });
+
+    // ===== 시작 =====
+    loadYear(state.year);
   </script>
 </body>
 </html>
