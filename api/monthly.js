@@ -26,18 +26,20 @@ function currentMonthSeoul(){
   return `${y}-${pad2(m)}`;
 }
 
-function monthRangeSeoul(yyyyMm){
+// ✅ 여기서부터: "YYYY-MM-DD"만 리턴하게 변경
+function monthRangeSeoulYMD(yyyyMm){
   const [yStr,mStr] = String(yyyyMm).split("-");
   const y = Number(yStr);
   const m = Number(mStr);
   if(!y || !m) throw new Error("Invalid month format. Use YYYY-MM.");
 
-  const startISO = `${y}-${pad2(m)}-01T00:00:00+09:00`;
+  const startDate = `${y}-${pad2(m)}-01`;
 
   let ny=y, nm=m+1;
   if(nm===13){ ny=y+1; nm=1; }
-  const endISO = `${ny}-${pad2(nm)}-01T00:00:00+09:00`;
-  return { startISO, endISO, y, m };
+  const endDate = `${ny}-${pad2(nm)}-01`;
+
+  return { startDate, endDate, y, m };
 }
 
 function prevMonth(yyyyMm){
@@ -105,9 +107,6 @@ async function getSelectOptionsInOrder(databaseId, propName){
   return [];
 }
 
-/**
- * select / multi_select / status 타입 모두 대응
- */
 function pickSelectName(page, propName){
   const p = page?.properties?.[propName];
   if(!p) return null;
@@ -153,7 +152,7 @@ function mapToArray(map, labels){
 }
 
 // =========================
-// ✅ 디버그 유틸 (날짜별 카운트 / min-max)
+// ✅ 디버그 유틸
 // =========================
 function getDateStartYYYYMMDD(page, propName){
   const p = page?.properties?.[propName];
@@ -178,7 +177,6 @@ function minMaxDate(pages, propName){
 }
 
 export default async function handler(req,res){
-  // ✅ CORS: Notion 임베드(iframe)에서도 호출 가능하게
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET,OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
@@ -191,30 +189,27 @@ export default async function handler(req,res){
     const month = (req.query?.month || currentMonthSeoul()).toString();
     const lastMonth = prevMonth(month);
 
-    const thisRange = monthRangeSeoul(month);
-    const lastRange = monthRangeSeoul(lastMonth);
+    const thisRange = monthRangeSeoulYMD(month);
+    const lastRange = monthRangeSeoulYMD(lastMonth);
 
-    // 라벨 순서(노션 등록 순서)
     const workLabels = await getSelectOptionsInOrder(NOTION_DAILY_DB_ID, DAILY_WORK_PROP);
     const outLabels  = await getSelectOptionsInOrder(NOTION_DAILY_DB_ID, DAILY_OUTCOME_PROP);
 
     const safeWorkLabels = workLabels.length ? workLabels : [];
     const safeOutLabels  = outLabels.length  ? outLabels  : [];
 
-    // =========================
-    // 일일업무기록 집계(이번달/전월)
-    // =========================
+    // ✅ 핵심: 날짜 필터를 YYYY-MM-DD로만 적용
     const dailyThisPages = await queryAll(NOTION_DAILY_DB_ID,{
-      filter:{ property: DAILY_DATE_PROP, date:{ on_or_after:thisRange.startISO, before:thisRange.endISO } },
+      filter:{ property: DAILY_DATE_PROP, date:{ on_or_after:thisRange.startDate, before:thisRange.endDate } },
       page_size:100,
     });
 
     const dailyLastPages = await queryAll(NOTION_DAILY_DB_ID,{
-      filter:{ property: DAILY_DATE_PROP, date:{ on_or_after:lastRange.startISO, before:lastRange.endISO } },
+      filter:{ property: DAILY_DATE_PROP, date:{ on_or_after:lastRange.startDate, before:lastRange.endDate } },
       page_size:100,
     });
 
-    // ✅ 디버그 데이터 생성 (문제 원인 확정용)
+    // 디버그
     const debugThisCountsByDate = countByDate(dailyThisPages, DAILY_DATE_PROP);
     const debugLastCountsByDate = countByDate(dailyLastPages, DAILY_DATE_PROP);
     const debugThisMinMax = minMaxDate(dailyThisPages, DAILY_DATE_PROP);
@@ -235,17 +230,15 @@ export default async function handler(req,res){
     const outThisArr  = mapToArray(outThisMap,  outLabelsFinal);
     const outLastArr  = mapToArray(outLastMap,  outLabelsFinal);
 
-    // =========================
-    // 투두(이번달 마감일 기준)
-    // =========================
+    // ✅ 투두도 동일하게 YYYY-MM-DD로만 적용 (월 집계 정확도 ↑)
     const todoThisPages = await queryAll(NOTION_TODO_DB_ID,{
-      filter:{ property: TODO_DUE_PROP, date:{ on_or_after:thisRange.startISO, before:thisRange.endISO } },
+      filter:{ property: TODO_DUE_PROP, date:{ on_or_after:thisRange.startDate, before:thisRange.endDate } },
       page_size:100,
     });
 
     const statusCount = Object.fromEntries(TODO_STATUSES_ALL.map(s=>[s,0]));
     for(const p of todoThisPages){
-      const st = pickSelectName(p, TODO_STATUS_PROP); // status/select 모두 대응
+      const st = pickSelectName(p, TODO_STATUS_PROP);
       if(!st) continue;
       if(statusCount[st] === undefined) statusCount[st] = 0;
       statusCount[st] += 1;
@@ -266,7 +259,6 @@ export default async function handler(req,res){
     res.setHeader("Content-Type","application/json; charset=utf-8");
     res.setHeader("Cache-Control","no-store");
 
-    // ✅ 메타에 range(YYYY-MM-DD)도 같이 내려줌 (네가 확인하기 편하게)
     return res.status(200).json({
       kpi:{
         month,
@@ -288,19 +280,15 @@ export default async function handler(req,res){
         lastMonth,
         tz:"Asia/Seoul(+09:00)",
         range:{
-          this:{ startDate: thisRange.startISO.slice(0,10), endDate: thisRange.endISO.slice(0,10) },
-          last:{ startDate: lastRange.startISO.slice(0,10), endDate: lastRange.endISO.slice(0,10) },
+          this:{ startDate: thisRange.startDate, endDate: thisRange.endDate },
+          last:{ startDate: lastRange.startDate, endDate: lastRange.endDate },
         },
         prop:{
           daily:{ date: DAILY_DATE_PROP, work: DAILY_WORK_PROP, outcome: DAILY_OUTCOME_PROP },
           todo:{ due: TODO_DUE_PROP, status: TODO_STATUS_PROP },
         },
-        // ✅ 여기! 문제 확정용 디버그
         debug:{
-          env:{
-            NOTION_DAILY_DB_ID,
-            NOTION_TODO_DB_ID
-          },
+          env:{ NOTION_DAILY_DB_ID, NOTION_TODO_DB_ID },
           thisMinMax: debugThisMinMax,
           lastMinMax: debugLastMinMax,
           thisCountsByDate: debugThisCountsByDate,
